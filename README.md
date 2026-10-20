@@ -2,7 +2,7 @@
 
 I got sick of trying to sign PDFs and not having a simple way to sign them for free.  
 So I made my own.  
-Coded purely using ChatGPT Codex.
+Click the link above to use it.
 
 A free, browser-based PDF editor built with HTML, CSS, and vanilla JavaScript using ChatGPT Codex.
 
