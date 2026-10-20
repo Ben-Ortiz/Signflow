@@ -1,4 +1,4 @@
-# SignFlow — PDF Signer
+# [SignFlow — PDF Signer](https://ben-ortiz.github.io/Signflow/)
 
 A free, static, browser-based PDF signing app that can be hosted on **GitHub Pages**. No backend, database, account, build process, or API keys are required.
 
@@ -11,7 +11,7 @@ A free, static, browser-based PDF signing app that can be hosted on **GitHub Pag
 - Export a new PDF with the added content.
 - Documents are processed in your browser; PDFs are not uploaded to GitHub or any app server.
 
-**Note:** The page loads PDF.js and pdf-lib from cdnjs.cloudflare.com, so internet access is required for those libraries to load. This tool adds a visible electronic signature, *not* a certificate-backed cryptographic digital signature or e-sign audit trail. Use only with documents for which a simple signature stamp is acceptable.
+**Note:** The page loads PDF.js and pdf-lib from cdnjs.cloudflare.com, so internet access is required for those libraries to load. This tool adds a visible electronic signature, _not_ a certificate-backed cryptographic digital signature or e-sign audit trail. Use only with documents for which a simple signature stamp is acceptable.
 
 ## Publish on GitHub Pages (automatic deployment)
 
@@ -45,7 +45,7 @@ The full application is in `index.html` (HTML, CSS, and vanilla JavaScript). Edi
 
 ## Privacy and limits
 
-GitHub Pages serves only the app files. PDF parsing and exported PDF generation occur in the browser, and the app does not intentionally transmit documents to a server. Hosting a public website still exposes the site's *source code*, so don't put secrets or private data in the repository. PDF.js and pdf-lib are third-party JavaScript loaded through a CDN.
+GitHub Pages serves only the app files. PDF parsing and exported PDF generation occur in the browser, and the app does not intentionally transmit documents to a server. Hosting a public website still exposes the site's _source code_, so don't put secrets or private data in the repository. PDF.js and pdf-lib are third-party JavaScript loaded through a CDN.
 
 The app is provided as-is; verify the exported PDF before sending or signing important documents.
 
