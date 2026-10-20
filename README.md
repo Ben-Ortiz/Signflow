@@ -1,6 +1,7 @@
 # [SignFlow — PDF Signer](https://ben-ortiz.github.io/Signflow/)
 
 A free, static, browser-based PDF signing app that can be hosted on **GitHub Pages**. No backend, database, account, build process, or API keys are required.
+Coded purely using ChatGPT Codex.
 
 ## Features
 
