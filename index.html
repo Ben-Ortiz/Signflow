@@ -1,0 +1,1161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SignFlow — PDF Signer</title>
+    <style>
+      :root {
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+        color: #e9eefb;
+        background: #0a1020;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+      }
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 330px minmax(0, 1fr);
+      }
+      aside {
+        padding: 28px 24px;
+        background: #111a2d;
+        border-right: 1px solid #25314b;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        font-size: 21px;
+        font-weight: 750;
+      }
+      .logo {
+        width: 35px;
+        height: 35px;
+        display: grid;
+        place-items: center;
+        border-radius: 11px;
+        background: #6366f1;
+        color: white;
+      }
+      small,
+      .hint {
+        color: #9caecb;
+      }
+      h2 {
+        font-size: 13px;
+        color: #c5d1e7;
+        margin: 0 0 10px;
+      }
+      input[type="file"] {
+        display: none;
+      }
+      .upload {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px dashed #697b9f;
+        background: #1a2740;
+        color: #eaf0ff;
+        border-radius: 11px;
+        padding: 17px;
+        cursor: pointer;
+        font-weight: 650;
+        text-align: center;
+      }
+      .upload:hover {
+        background: #243657;
+      }
+      .file-name {
+        font-size: 12px;
+        color: #a8b9d9;
+        overflow-wrap: anywhere;
+        margin-top: 9px;
+      }
+      .text-entry {
+        width: 100%;
+        border: 1px solid #364665;
+        border-radius: 9px;
+        background: #0b1426;
+        color: #fff;
+        padding: 11px;
+        outline: none;
+      }
+      .text-stamp {
+        color: #111;
+        background: transparent;
+        white-space: pre-wrap;
+        overflow: hidden;
+        padding: 3px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        font-family: Arial, Helvetica, sans-serif;
+        line-height: 1.2;
+      }
+      .text-stamp .stamp-text {
+        pointer-events: none;
+        overflow-wrap: anywhere;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .segment {
+        display: flex;
+        background: #0b1426;
+        border-radius: 9px;
+        padding: 4px;
+        gap: 3px;
+      }
+      .segment button {
+        flex: 1;
+        border: 0;
+        background: transparent;
+        color: #a9b9d4;
+        border-radius: 7px;
+        padding: 10px;
+      }
+      .segment button.active {
+        background: #38476d;
+        color: white;
+      }
+      #pad {
+        width: 100%;
+        height: 150px;
+        background: #fff;
+        border-radius: 10px;
+        touch-action: none;
+        display: block;
+        cursor: crosshair;
+      }
+      #typed {
+        width: 100%;
+        border: 1px solid #364665;
+        border-radius: 9px;
+        background: #0b1426;
+        color: #fff;
+        padding: 13px;
+        outline: none;
+      }
+      #typedPreview {
+        min-height: 105px;
+        background: white;
+        color: #161616;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        font:
+          italic 36px "Brush Script MT",
+          "Segoe Script",
+          cursive;
+        overflow: hidden;
+        padding: 12px;
+      }
+      #typedControls {
+        display: none;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .btn {
+        border: 1px solid #364762;
+        background: #1d2b46;
+        color: #edf2ff;
+        padding: 11px 13px;
+        border-radius: 9px;
+        font-weight: 650;
+      }
+      .btn:hover:not(:disabled) {
+        background: #2b3d60;
+      }
+      .primary {
+        background: #6366f1;
+        border-color: #7779ff;
+        color: white;
+      }
+      .primary:hover:not(:disabled) {
+        background: #5458e3;
+      }
+      .wide {
+        width: 100%;
+      }
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .status {
+        color: #a9bad6;
+        font-size: 12px;
+        line-height: 1.6;
+        min-height: 20px;
+      }
+      .foot {
+        margin-top: auto;
+        border-top: 1px solid #283650;
+        padding-top: 18px;
+        font-size: 12px;
+        color: #899bbb;
+        line-height: 1.7;
+      }
+      main {
+        padding: 24px 30px;
+        min-width: 0;
+      }
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      .toolbar strong {
+        font-size: 17px;
+      }
+      .pages {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .pages button {
+        border: 1px solid #354462;
+        background: #1b2740;
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px 13px;
+      }
+      .pages button:disabled {
+        opacity: 0.35;
+      }
+      .workspace {
+        background: #131d31;
+        border: 1px solid #263551;
+        border-radius: 16px;
+        min-height: calc(100vh - 105px);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 32px;
+        overflow: auto;
+      }
+      .empty {
+        margin: auto;
+        text-align: center;
+        color: #a9b8d0;
+        max-width: 380px;
+      }
+      .empty .icon {
+        font-size: 60px;
+        margin-bottom: 17px;
+      }
+      .empty h3 {
+        font-size: 22px;
+        color: #e9effd;
+        margin: 0 0 12px;
+      }
+      .pageWrap {
+        position: relative;
+        box-shadow: 0 18px 40px #02061788;
+        line-height: 0;
+        max-width: 100%;
+        background: white;
+        touch-action: none;
+      }
+      .pageWrap canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .paint-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        pointer-events: none;
+        cursor: crosshair;
+        z-index: 3;
+      }
+      .pageWrap.painting .paint-layer {
+        pointer-events: auto;
+      }
+      .pageWrap.painting .stamp {
+        pointer-events: none;
+      }
+      .paint-tools {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex-wrap: wrap;
+      }
+      .paint-tools input[type="color"] {
+        width: 43px;
+        height: 36px;
+        border: 1px solid #364762;
+        border-radius: 8px;
+        background: #1d2b46;
+        padding: 3px;
+      }
+      .paint-tools input[type="range"] {
+        width: 92px;
+        accent-color: #818cf8;
+      }
+      .paint-tools .btn.active {
+        background: #6366f1;
+        border-color: #818cf8;
+      }
+      .stamp {
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: block;
+        cursor: move;
+        touch-action: none;
+        line-height: normal;
+        border: 1.5px dashed #565af2;
+        background: #6366f111;
+        user-select: none;
+      }
+      .stamp.selected {
+        outline: 1.5px solid #818cf8;
+      }
+      .stamp img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+      }
+      .stamp .delete {
+        position: absolute;
+        right: -12px;
+        top: -12px;
+        border: 0;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        background: #e65269;
+        color: #fff;
+        font-weight: bold;
+        line-height: 1;
+        display: none;
+      }
+      .stamp.selected .delete {
+        display: block;
+      }
+      .stamp .resize {
+        position: absolute;
+        right: -6px;
+        bottom: -6px;
+        width: 13px;
+        height: 13px;
+        border-radius: 3px;
+        background: #7375f5;
+        border: 2px solid #fff;
+        cursor: nwse-resize;
+      }
+      .subtle {
+        font-size: 12px;
+        color: #98abc9;
+      }
+      .tip {
+        background: #1d2942;
+        border-radius: 9px;
+        padding: 12px;
+        color: #adbfda;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .controls .btn {
+        flex: 1;
+      }
+      .hidden {
+        display: none !important;
+      }
+      @media (max-width: 850px) {
+        .app {
+          display: block;
+        }
+        aside {
+          border-right: 0;
+          border-bottom: 1px solid #26344e;
+          padding: 20px;
+        }
+        main {
+          padding: 17px;
+        }
+        .workspace {
+          padding: 12px;
+          min-height: 500px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside>
+        <header><span class="logo">✍</span> SignFlow</header>
+        <div>
+          <h2>1. Choose your document</h2>
+          <label class="upload" for="pdfFile">↑ &nbsp;Upload PDF</label
+          ><input type="file" id="pdfFile" accept="application/pdf,.pdf" />
+          <div class="file-name" id="filename">No PDF selected</div>
+        </div>
+        <div>
+          <h2>2. Create your signature</h2>
+          <div class="segment">
+            <button id="drawTab" class="active">Draw</button
+            ><button id="typeTab">Type</button>
+          </div>
+          <div id="drawControls" style="margin-top: 12px">
+            <canvas id="pad"></canvas>
+            <div
+              class="row"
+              style="margin-top: 9px; justify-content: space-between"
+            >
+              <span class="subtle">Draw with mouse or finger</span
+              ><button class="btn" id="clearPad" style="padding: 7px 11px">
+                Clear
+              </button>
+            </div>
+          </div>
+          <div id="typedControls" style="margin-top: 12px">
+            <input id="typed" placeholder="Your full name" maxlength="70" />
+            <div id="typedPreview" style="margin-top: 10px">Your signature</div>
+          </div>
+          <button
+            class="btn primary wide"
+            id="add"
+            disabled
+            style="margin-top: 12px"
+          >
+            + Add signature to page
+          </button>
+        </div>
+        <div>
+          <h2>3. Add regular text or a date</h2>
+          <input
+            id="plainText"
+            class="text-entry"
+            placeholder="Type a date, name, or note"
+            maxlength="300"
+            aria-label="Text to insert"
+          />
+          <div class="row" style="margin-top: 9px">
+            <button class="btn" id="today" style="flex: 1">
+              Use today’s date</button
+            ><select
+              id="textSize"
+              class="text-entry"
+              style="width: 108px"
+              aria-label="Text font size"
+            >
+              <option value="10">10 pt</option>
+              <option value="12" selected>12 pt</option>
+              <option value="14">14 pt</option>
+              <option value="18">18 pt</option>
+              <option value="24">24 pt</option>
+            </select>
+          </div>
+          <button
+            class="btn wide"
+            id="addText"
+            disabled
+            style="margin-top: 9px"
+          >
+            + Add text to page
+          </button>
+        </div>
+        <div>
+          <h2>4. Draw directly on the PDF</h2>
+          <button class="btn wide" id="paintToggle" disabled>
+            ✎ Enable freehand drawing
+          </button>
+          <div id="paintControls" class="hidden" style="margin-top: 10px">
+            <div class="paint-tools">
+              <label class="subtle" for="paintColor">Color</label
+              ><input id="paintColor" type="color" value="#182036" /><label
+                class="subtle"
+                for="paintWidth"
+                >Size</label
+              ><input
+                id="paintWidth"
+                type="range"
+                min="1"
+                max="18"
+                value="3"
+              /><span class="subtle" id="brushLabel">3</span>
+            </div>
+            <div class="row" style="margin-top: 10px; flex-wrap: wrap">
+              <button class="btn" id="penTool">Pen</button
+              ><button class="btn" id="eraserTool">Eraser</button
+              ><button class="btn" id="undoPaint">↶ Undo stroke</button
+              ><button class="btn" id="clearPaint">Clear page</button>
+            </div>
+            <div class="subtle" style="margin-top: 9px">
+              Draw with mouse, pen, or touch. Eraser removes entire strokes;
+              undo restores the last drawing change. Drawings are included in
+              your PDF.
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2>5. Export PDF</h2>
+          <div class="actions">
+            <button class="btn wide" id="download" disabled>
+              ↓ Download signed PDF
+            </button>
+          </div>
+          <div
+            id="status"
+            class="status"
+            role="status"
+            style="margin-top: 12px"
+          ></div>
+        </div>
+        <div class="tip">
+          Add a signature or regular text, then drag it into position. Use the
+          corner handle to resize signatures. Select text to delete it or change
+          its position. Repeat on any page.
+        </div>
+        <div class="foot">
+          Your PDF is processed locally in your browser. No document is sent to
+          a server. This adds a visible signature; it does not provide
+          certificate-based cryptographic signing. Libraries load from a public
+          CDN.
+        </div>
+      </aside>
+      <main>
+        <div class="toolbar">
+          <div>
+            <strong>Document preview</strong>
+            <div class="subtle">Position signatures and text precisely</div>
+          </div>
+          <div class="pages">
+            <button id="prev" disabled>←</button
+            ><span id="pageLabel" class="subtle">Page 0 of 0</span
+            ><button id="next" disabled>→</button>
+          </div>
+        </div>
+        <div class="workspace" id="workspace">
+          <div class="empty" id="empty">
+            <div class="icon">▤</div>
+            <h3>Your document appears here</h3>
+            <p>
+              Upload a PDF to preview its pages, add signatures, dates or other
+              text, and save a copy.
+            </p>
+          </div>
+          <div id="pageWrap" class="pageWrap hidden">
+            <canvas id="pdfCanvas"></canvas
+            ><canvas id="paintCanvas" class="paint-layer"></canvas>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script>
+      (() => {
+        "use strict";
+        const $ = (id) => document.getElementById(id),
+          pad = $("pad"),
+          ctx = pad.getContext("2d"),
+          pdfCanvas = $("pdfCanvas"),
+          pdfCtx = pdfCanvas.getContext("2d"),
+          wrap = $("pageWrap");
+        let bytes = null,
+          pdf = null,
+          pageNum = 1,
+          pages = 0,
+          placements = [],
+          strokes = [],
+          paintHistory = [],
+          painting = false,
+          paintTool = "pen",
+          activeStroke = null,
+          signatureMode = "draw",
+          selected = null,
+          loading = false;
+        const message = (s) => ($("status").textContent = s);
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        function initPad() {
+          const rect = pad.getBoundingClientRect(),
+            dpr = devicePixelRatio || 1;
+          pad.width = Math.round(rect.width * dpr);
+          pad.height = Math.round(150 * dpr);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.lineWidth = 2.8;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.strokeStyle = "#141827";
+        }
+        initPad();
+        let drawing = false,
+          last = null;
+        function pt(e) {
+          let r = pad.getBoundingClientRect();
+          return { x: e.clientX - r.left, y: e.clientY - r.top };
+        }
+        pad.addEventListener("pointerdown", (e) => {
+          drawing = true;
+          pad.setPointerCapture(e.pointerId);
+          last = pt(e);
+          ctx.beginPath();
+          ctx.arc(last.x, last.y, 1.4, 0, Math.PI * 2);
+          ctx.fillStyle = "#141827";
+          ctx.fill();
+        });
+        pad.addEventListener("pointermove", (e) => {
+          if (!drawing) return;
+          const p = pt(e);
+          ctx.beginPath();
+          ctx.moveTo(last.x, last.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+          last = p;
+        });
+        pad.addEventListener("pointerup", () => (drawing = false));
+        pad.addEventListener("pointercancel", () => (drawing = false));
+        $("clearPad").onclick = () =>
+          ctx.clearRect(0, 0, pad.width, pad.height);
+        $("drawTab").onclick = () => setMode("draw");
+        $("typeTab").onclick = () => setMode("type");
+        function setMode(m) {
+          signatureMode = m;
+          $("drawTab").classList.toggle("active", m === "draw");
+          $("typeTab").classList.toggle("active", m === "type");
+          $("drawControls").style.display = m === "draw" ? "block" : "none";
+          $("typedControls").style.display = m === "type" ? "block" : "none";
+        }
+        $("typed").oninput = () => {
+          $("typedPreview").textContent = $("typed").value || "Your signature";
+        };
+        function signatureImage() {
+          const out = document.createElement("canvas");
+          out.width = 1100;
+          out.height = 300;
+          let c = out.getContext("2d");
+          if (signatureMode === "type") {
+            let str = $("typed").value.trim();
+            if (!str) throw Error("Type your name first.");
+            c.fillStyle = "#111";
+            c.textAlign = "center";
+            c.textBaseline = "middle";
+            let size = Math.min(105, Math.floor(990 / (str.length * 0.58)));
+            c.font = `italic ${Math.max(22, size)}px "Brush Script MT", "Segoe Script", cursive`;
+            c.fillText(str, 550, 150, 1050);
+          } else {
+            let pixels = ctx.getImageData(0, 0, pad.width, pad.height),
+              p = pixels.data,
+              minX = pad.width,
+              minY = pad.height,
+              maxX = -1,
+              maxY = -1;
+            for (let y = 0; y < pad.height; y++)
+              for (let x = 0; x < pad.width; x++) {
+                if (p[(y * pad.width + x) * 4 + 3] > 10) {
+                  minX = Math.min(minX, x);
+                  minY = Math.min(minY, y);
+                  maxX = Math.max(maxX, x);
+                  maxY = Math.max(maxY, y);
+                }
+              }
+            if (maxX < 0) throw Error("Draw your signature first.");
+            let w = maxX - minX + 1,
+              h = maxY - minY + 1;
+            let ratio = Math.min(1000 / w, 250 / h);
+            c.drawImage(
+              pad,
+              minX,
+              minY,
+              w,
+              h,
+              (1100 - w * ratio) / 2,
+              (300 - h * ratio) / 2,
+              w * ratio,
+              h * ratio,
+            );
+          }
+          return out.toDataURL("image/png");
+        }
+        $("pdfFile").onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          message("Opening PDF…");
+          try {
+            bytes = new Uint8Array(await file.arrayBuffer());
+            pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+            pages = pdf.numPages;
+            pageNum = 1;
+            placements = [];
+            strokes = [];
+            paintHistory = [];
+            setPainting(false);
+            $("filename").textContent = file.name;
+            $("empty").classList.add("hidden");
+            wrap.classList.remove("hidden");
+            $("add").disabled = false;
+            $("addText").disabled = false;
+            $("paintToggle").disabled = false;
+            $("download").disabled = false;
+            await render();
+            message("PDF loaded. Create a signature to place it.");
+          } catch (err) {
+            pdf = null;
+            bytes = null;
+            message("Could not open PDF: " + err.message);
+            $("filename").textContent = "No usable PDF selected";
+          }
+        };
+        async function render() {
+          if (!pdf) return;
+          const current = pageNum;
+          loading = true;
+          const page = await pdf.getPage(pageNum);
+          if (current !== pageNum) return;
+          const natural = page.getViewport({ scale: 1 });
+          let available = Math.max(250, $("workspace").clientWidth - 65);
+          let scale = Math.min(1.6, available / natural.width);
+          let viewport = page.getViewport({ scale });
+          pdfCanvas.width = Math.floor(viewport.width);
+          pdfCanvas.height = Math.floor(viewport.height);
+          pdfCanvas.style.width = viewport.width + "px";
+          pdfCanvas.style.height = viewport.height + "px";
+          wrap.style.width = viewport.width + "px";
+          wrap.style.height = viewport.height + "px";
+          await page.render({ canvasContext: pdfCtx, viewport }).promise;
+          loading = false;
+          $("pageLabel").textContent = `Page ${pageNum} of ${pages}`;
+          $("prev").disabled = pageNum === 1;
+          $("next").disabled = pageNum === pages;
+          drawStamps();
+          redrawPaint();
+        }
+        $("prev").onclick = () => {
+          if (pageNum > 1) {
+            pageNum--;
+            render();
+          }
+        };
+        $("next").onclick = () => {
+          if (pageNum < pages) {
+            pageNum++;
+            render();
+          }
+        };
+        $("add").onclick = () => {
+          if (!pdf) return;
+          try {
+            const url = signatureImage();
+            let rec = {
+              id: Date.now() + Math.random(),
+              page: pageNum,
+              x: 0.28,
+              y: 0.35,
+              w: 0.42,
+              h: 0.12,
+              url,
+            };
+            placements.push(rec);
+            selected = rec.id;
+            drawStamps();
+            message("Signature placed. Drag or resize it, then download.");
+          } catch (e) {
+            message(e.message);
+          }
+        };
+        $("today").onclick = () => {
+          $("plainText").value = new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          });
+        };
+        $("addText").onclick = () => {
+          if (!pdf) return;
+          const value = $("plainText").value.trim();
+          if (!value) {
+            message("Type some text or choose today’s date first.");
+            return;
+          }
+          const size = Number($("textSize").value);
+          const naturalWidth = pdfCanvas.width;
+          const estimatedWidth = Math.max(
+            80,
+            Math.min(
+              naturalWidth * 0.85,
+              value.length * size * 0.64 * (pdfCanvas.width / 612) + 16,
+            ),
+          );
+          const rec = {
+            id: Date.now() + Math.random(),
+            kind: "text",
+            page: pageNum,
+            x: 0.2,
+            y: 0.4,
+            w: Math.min(0.85, estimatedWidth / naturalWidth),
+            h: Math.max(
+              0.035,
+              (size * 1.8) / (pdfCanvas.height / (pdfCanvas.width / 612)),
+            ),
+            text: value,
+            size,
+          };
+          placements.push(rec);
+          selected = rec.id;
+          drawStamps();
+          message("Text added. Drag it into place, then download your PDF.");
+        };
+        function drawStamps() {
+          wrap.querySelectorAll(".stamp").forEach((x) => x.remove());
+          for (const rec of placements.filter((r) => r.page === pageNum)) {
+            const el = document.createElement("div");
+            el.className =
+              "stamp" +
+              (rec.kind === "text" ? " text-stamp" : "") +
+              (selected === rec.id ? " selected" : "");
+            el.style.left = rec.x * 100 + "%";
+            el.style.top = rec.y * 100 + "%";
+            el.style.width = rec.w * 100 + "%";
+            el.style.height = rec.h * 100 + "%";
+            if (rec.kind === "text") {
+              let t = document.createElement("span");
+              t.className = "stamp-text";
+              t.textContent = rec.text;
+              t.style.fontSize = (rec.size * pdfCanvas.width) / 612 + "px";
+              el.appendChild(t);
+            } else {
+              const img = document.createElement("img");
+              img.alt = "Signature";
+              img.src = rec.url;
+              el.appendChild(img);
+            }
+            const del = document.createElement("button");
+            del.className = "delete";
+            del.setAttribute("aria-label", "Remove item");
+            del.textContent = "×";
+            const resize = document.createElement("span");
+            resize.className = "resize";
+            el.append(del, resize);
+            del.onclick = (e) => {
+              e.stopPropagation();
+              placements = placements.filter((r) => r !== rec);
+              selected = null;
+              drawStamps();
+            };
+            el.addEventListener("pointerdown", (e) => {
+              if (e.target.closest("button")) return;
+              e.preventDefault();
+              const isResize = e.target.classList.contains("resize");
+              selected = rec.id;
+              el.classList.add("selected");
+              for (const other of wrap.querySelectorAll(".stamp"))
+                if (other !== el) other.classList.remove("selected");
+              el.setPointerCapture(e.pointerId);
+              let startX = e.clientX,
+                startY = e.clientY,
+                ox = rec.x,
+                oy = rec.y,
+                ow = rec.w,
+                oh = rec.h;
+              const move = (ev) => {
+                let dx = (ev.clientX - startX) / wrap.clientWidth,
+                  dy = (ev.clientY - startY) / wrap.clientHeight;
+                if (isResize) {
+                  rec.w = Math.max(0.04, Math.min(1 - rec.x, ow + dx));
+                  rec.h = Math.max(0.02, Math.min(1 - rec.y, oh + dy));
+                  el.style.width = rec.w * 100 + "%";
+                  el.style.height = rec.h * 100 + "%";
+                } else {
+                  rec.x = Math.max(0, Math.min(1 - rec.w, ox + dx));
+                  rec.y = Math.max(0, Math.min(1 - rec.h, oy + dy));
+                  el.style.left = rec.x * 100 + "%";
+                  el.style.top = rec.y * 100 + "%";
+                }
+              };
+              const done = () => {
+                el.removeEventListener("pointermove", move);
+                el.removeEventListener("pointerup", done);
+                el.removeEventListener("pointercancel", done);
+                drawStamps();
+              };
+              el.addEventListener("pointermove", move);
+              el.addEventListener("pointerup", done);
+              el.addEventListener("pointercancel", done);
+            });
+            wrap.appendChild(el);
+          }
+        }
+        const paintCanvas = $("paintCanvas"),
+          paintCtx = paintCanvas.getContext("2d");
+        function setPainting(on) {
+          painting = on;
+          wrap.classList.toggle("painting", on);
+          $("paintControls").classList.toggle("hidden", !on);
+          $("paintToggle").textContent = on
+            ? "✓ Drawing enabled — click to stop"
+            : "✎ Enable freehand drawing";
+          $("paintToggle").classList.toggle("active", on);
+          if (!on) activeStroke = null;
+          redrawPaint();
+        }
+        $("paintToggle").onclick = () => setPainting(!painting);
+        $("paintWidth").oninput = () => {
+          $("brushLabel").textContent = $("paintWidth").value;
+        };
+        function setPaintTool(t) {
+          paintTool = t;
+          $("penTool").classList.toggle("active", t === "pen");
+          $("eraserTool").classList.toggle("active", t === "eraser");
+          paintCanvas.style.cursor = t === "eraser" ? "cell" : "crosshair";
+        }
+        setPaintTool("pen");
+        $("penTool").onclick = () => setPaintTool("pen");
+        $("eraserTool").onclick = () => setPaintTool("eraser");
+        function paintPoint(e) {
+          const r = paintCanvas.getBoundingClientRect();
+          return {
+            x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
+            y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
+          };
+        }
+        function savePaintHistory() {
+          paintHistory.push(
+            strokes.map((s) => ({
+              ...s,
+              points: s.points.map((p) => ({ ...p })),
+            })),
+          );
+          if (paintHistory.length > 80) paintHistory.shift();
+        }
+        function eraseAt(p) {
+          const margin = 0.012;
+          let candidates = strokes.filter((s) => s.page === pageNum);
+          let hit = candidates.findLast((s) =>
+            s.points.some(
+              (q) =>
+                Math.hypot(
+                  (q.x - p.x) * paintCanvas.width,
+                  (q.y - p.y) * paintCanvas.height,
+                ) < Math.max(12, s.width + 10),
+            ),
+          );
+          if (hit) {
+            savePaintHistory();
+            strokes = strokes.filter((s) => s !== hit);
+            redrawPaint();
+          }
+        }
+        paintCanvas.addEventListener("pointerdown", (e) => {
+          if (!painting || !pdf) return;
+          e.preventDefault();
+          paintCanvas.setPointerCapture(e.pointerId);
+          const p = paintPoint(e);
+          if (paintTool === "eraser") {
+            eraseAt(p);
+            return;
+          }
+          savePaintHistory();
+          activeStroke = {
+            page: pageNum,
+            color: $("paintColor").value,
+            width: +$("paintWidth").value,
+            points: [p],
+          };
+          strokes.push(activeStroke);
+          redrawPaint();
+        });
+        paintCanvas.addEventListener("pointermove", (e) => {
+          if (!painting) return;
+          if (paintTool === "eraser") {
+            if (e.buttons) eraseAt(paintPoint(e));
+            return;
+          }
+          if (!activeStroke) return;
+          e.preventDefault();
+          activeStroke.points.push(paintPoint(e));
+          redrawPaint();
+        });
+        for (const evt of ["pointerup", "pointercancel", "lostpointercapture"])
+          paintCanvas.addEventListener(evt, () => (activeStroke = null));
+        function redrawPaint() {
+          if (!paintCanvas || !pdf) return;
+          paintCanvas.width = pdfCanvas.width;
+          paintCanvas.height = pdfCanvas.height;
+          const w = paintCanvas.width,
+            h = paintCanvas.height;
+          paintCtx.lineCap = "round";
+          paintCtx.lineJoin = "round";
+          for (const stroke of strokes.filter((s) => s.page === pageNum)) {
+            if (!stroke.points.length) continue;
+            paintCtx.strokeStyle = stroke.color;
+            paintCtx.fillStyle = stroke.color;
+            paintCtx.lineWidth = stroke.width * Math.min(w / 612, h / 792);
+            const pts = stroke.points;
+            if (pts.length === 1) {
+              paintCtx.beginPath();
+              paintCtx.arc(
+                pts[0].x * w,
+                pts[0].y * h,
+                Math.max(0.5, paintCtx.lineWidth / 2),
+                0,
+                Math.PI * 2,
+              );
+              paintCtx.fill();
+            } else {
+              paintCtx.beginPath();
+              paintCtx.moveTo(pts[0].x * w, pts[0].y * h);
+              for (const pt of pts.slice(1))
+                paintCtx.lineTo(pt.x * w, pt.y * h);
+              paintCtx.stroke();
+            }
+          }
+        }
+        $("undoPaint").onclick = () => {
+          if (!paintHistory.length) {
+            message("Nothing to undo.");
+            return;
+          }
+          strokes = paintHistory.pop();
+          redrawPaint();
+          message("Drawing change undone.");
+        };
+        $("clearPaint").onclick = () => {
+          if (!strokes.some((s) => s.page === pageNum)) return;
+          savePaintHistory();
+          strokes = strokes.filter((s) => s.page !== pageNum);
+          redrawPaint();
+          message("Drawings cleared from this page. Undo to restore.");
+        };
+        function hexRgb(hex) {
+          return PDFLib.rgb(
+            parseInt(hex.slice(1, 3), 16) / 255,
+            parseInt(hex.slice(3, 5), 16) / 255,
+            parseInt(hex.slice(5, 7), 16) / 255,
+          );
+        }
+        $("download").onclick = async () => {
+          if (!pdf || !bytes) return;
+          if (!placements.length && !strokes.length) {
+            message("Add a signature, text, or drawing before downloading.");
+            return;
+          }
+          message("Creating signed PDF…");
+          $("download").disabled = true;
+          try {
+            const doc = await PDFLib.PDFDocument.load(bytes, {
+              ignoreEncryption: false,
+            });
+            const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+            for (const rec of placements) {
+              const page = doc.getPage(rec.page - 1),
+                { width, height } = page.getSize();
+              if (rec.kind === "text") {
+                const fontsize = (rec.size * width) / 612;
+                const y = height - rec.y * height - fontsize * 1.2;
+                page.drawText(rec.text, {
+                  x: rec.x * width + 3,
+                  y,
+                  size: fontsize,
+                  font,
+                  color: PDFLib.rgb(0.07, 0.07, 0.07),
+                  maxWidth: Math.max(5, rec.w * width - 6),
+                  lineHeight: fontsize * 1.2,
+                });
+              } else {
+                const img = await doc.embedPng(rec.url);
+                page.drawImage(img, {
+                  x: rec.x * width,
+                  y: height - (rec.y + rec.h) * height,
+                  width: rec.w * width,
+                  height: rec.h * height,
+                });
+              }
+            }
+            for (const stroke of strokes) {
+              const page = doc.getPage(stroke.page - 1),
+                { width, height } = page.getSize();
+              const color = hexRgb(stroke.color),
+                thickness = (stroke.width * width) / 612,
+                pts = stroke.points;
+              if (pts.length === 1) {
+                page.drawCircle({
+                  x: pts[0].x * width,
+                  y: (1 - pts[0].y) * height,
+                  size: thickness / 2,
+                  color,
+                });
+              } else
+                for (let i = 1; i < pts.length; i++) {
+                  page.drawLine({
+                    start: {
+                      x: pts[i - 1].x * width,
+                      y: (1 - pts[i - 1].y) * height,
+                    },
+                    end: { x: pts[i].x * width, y: (1 - pts[i].y) * height },
+                    thickness,
+                    color,
+                  });
+                }
+            }
+            const output = await doc.save();
+            const blob = new Blob([output], { type: "application/pdf" }),
+              link = document.createElement("a"),
+              url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download =
+              ($("filename").textContent.replace(/\.pdf$/i, "") || "document") +
+              "-signed.pdf";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 30000);
+            message("PDF with signatures and text downloaded.");
+          } catch (e) {
+            message("Could not save PDF: " + e.message);
+          } finally {
+            $("download").disabled = false;
+          }
+        };
+        window.addEventListener("resize", () => {
+          if (pdf && !loading) render();
+        });
+      })();
+    </script>
+  </body>
+</html>
