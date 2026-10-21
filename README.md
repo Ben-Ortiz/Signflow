@@ -1,8 +1,5 @@
 # [SignFlow — PDF Signer & Editor](https://ben-ortiz.github.io/Signflow/)
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  
-Click the link above to use it.
-
 I got sick of trying to sign PDFs and not having a simple way to sign them for free.  
 So I made my own.
 
