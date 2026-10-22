@@ -154,7 +154,22 @@
     });
     return { strokes: next, changed };
   }
+  // Keep the last confirmed state separate from the in-progress editor state.
+  function commitPlacement(item) {
+    const committed = structuredClone(item);
+    delete committed.committed;
+    committed.confirmed = true;
+    return committed;
+  }
+  function exportPlacements(items) {
+    return items.flatMap((item) => {
+      if (item.confirmed === true) return [item];
+      return item.committed ? [item.committed] : [];
+    });
+  }
   const core = Object.freeze({
+    commitPlacement,
+    exportPlacements,
     PAGE_WIDTH,
     textLayout,
     erasedIntervals,

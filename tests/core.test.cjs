@@ -94,3 +94,43 @@ test("partial erasing splits strokes, preserves other pages, and leaves inputs i
   assert.equal(result.strokes[1].points.at(-1).x, 1);
   assert.deepEqual(source, before);
 });
+
+test("an unfinished second signature cannot remove the first confirmed signature", () => {
+  const { commitPlacement, exportPlacements } = require("../js/core.js");
+  const first = {
+    id: 1,
+    page: 1,
+    x: 0.2,
+    y: 0.3,
+    confirmed: true,
+    url: "first",
+  };
+  first.committed = commitPlacement(first);
+  const second = {
+    id: 2,
+    page: 1,
+    x: 0.4,
+    y: 0.5,
+    confirmed: false,
+    url: "second",
+  };
+  assert.deepEqual(
+    exportPlacements([first, second]).map((item) => item.url),
+    ["first"],
+  );
+  first.confirmed = false;
+  first.page = 2;
+  first.x = 0.7;
+  const exported = exportPlacements([first, second]);
+  assert.equal(exported.length, 1);
+  assert.equal(exported[0].url, "first");
+  assert.equal(exported[0].page, 1);
+  assert.equal(exported[0].x, 0.2);
+  first.confirmed = true;
+  first.committed = commitPlacement(first);
+  assert.equal(first.committed.committed, undefined);
+  assert.equal(exportPlacements([first, second])[0].x, 0.7);
+  second.confirmed = true;
+  second.committed = commitPlacement(second);
+  assert.equal(exportPlacements([first, second]).length, 2);
+});

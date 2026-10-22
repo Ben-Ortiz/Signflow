@@ -41,7 +41,13 @@ with sync_playwright() as playwright:
                 try {
                     const doc = await task.promise, page = await doc.getPage(1);
                     const ops = await page.getOperatorList();
+                    const canvas = document.createElement('canvas');
+                    const viewport = page.getViewport({scale: 0.5});
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
                     return {
+                        raster: canvas.toDataURL(),
                         images: ops.fnArray.filter(fn => fn === pdfjsLib.OPS.paintImageXObject).length,
                         text: (await page.getTextContent()).items.map(item => item.str).join(' '),
                     };
@@ -58,11 +64,36 @@ with sync_playwright() as playwright:
         assert save_and_inspect()["images"] == 0
         assert page.locator(".stamp.selected").count() == 1
         page.locator('button[aria-label="Confirm position"]').click()
-        assert save_and_inspect()["images"] == 1
-        # Reopening an item for editing makes it a draft until Done is pressed again.
+        first_confirmed = save_and_inspect()
+        assert first_confirmed["images"] == 1
+        # Selecting an existing item must preserve its last confirmed version.
         page.locator(".stamp").click()
-        assert save_and_inspect()["images"] == 0
+        assert save_and_inspect()["images"] == 1
         page.locator('button[aria-label="Confirm position"]').click()
+
+        # A second unfinished signature must not remove the first confirmed one.
+        if width < 850:
+            page.locator("#mobileSign").click()
+        page.locator("#typed").fill("Second Signature")
+        page.locator("#add").click()
+        assert page.locator(".stamp").count() == 2
+        result = save_and_inspect()
+        assert result["images"] == 1
+        assert result["raster"] == first_confirmed["raster"]
+        # Even selecting the first while placing the second must not exclude both.
+        page.locator(".stamp").nth(0).focus()
+        page.locator(".stamp").nth(0).press("Enter")
+        result = save_and_inspect()
+        assert result["images"] == 1
+        assert result["raster"] == first_confirmed["raster"]
+        page.locator(".stamp").nth(1).focus()
+        page.locator(".stamp").nth(1).press("Enter")
+        page.locator('.stamp.selected button[aria-label="Confirm position"]').click()
+        assert save_and_inspect()["images"] == 2
+        # Remove the second signature to continue the text/date assertions.
+        page.locator(".stamp").nth(1).focus()
+        page.locator(".stamp").nth(1).press("Enter")
+        page.locator('.stamp.selected button[aria-label="Remove item"]').click()
 
         # Confirmed signature stays included while new text and date remain drafts.
         if width < 850:
@@ -85,7 +116,7 @@ with sync_playwright() as playwright:
         ), result
         assert not errors, errors
         print(
-            f"{width}px: draft signature, text, and date excluded; Done includes them; reselected signature excluded until reconfirmed"
+            f"{width}px: draft signature, text, and date excluded; Done includes them; last confirmed signature retained while a second is unfinished"
         )
         page.close()
     browser.close()

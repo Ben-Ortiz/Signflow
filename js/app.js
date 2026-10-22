@@ -1077,7 +1077,10 @@
   }
   function confirmPosition() {
     const rec = placements.find((item) => item.id === selected);
-    if (rec) rec.confirmed = true;
+    if (rec) {
+      rec.confirmed = true;
+      rec.committed = SignFlowCore.commitPlacement(rec);
+    }
     selected = pendingPlacement = null;
     drawStamps();
     message(
@@ -1345,7 +1348,7 @@
       setTimeout(() => URL.revokeObjectURL(url), 30000);
       message(
         snapshot.placements.some((item) => item.confirmed !== true)
-          ? "Saved! Unconfirmed items were left out. Tap Done on each item to include it next time."
+          ? "Saved! Unconfirmed changes were left out. Tap Done to include them next time."
           : "Saved! Your edited PDF has been downloaded.",
       );
     } catch (e) {

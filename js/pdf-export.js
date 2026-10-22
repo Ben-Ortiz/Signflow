@@ -17,8 +17,9 @@ window.SignFlowExport = async function ({ bytes, placements, strokes }) {
     });
     const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
     const textLayout = (rec) => SignFlowCore.textLayout(rec, font);
-    // Drafts remain editable in the UI, but only Done commits them to export.
-    for (const rec of placements.filter((item) => item.confirmed === true)) {
+    // Existing items retain their last confirmed version during further edits.
+    // Brand-new drafts have no committed version and are omitted entirely.
+    for (const rec of SignFlowCore.exportPlacements(placements)) {
       const page = doc.getPage(rec.page - 1),
         { width, height } = page.getSize();
       if (rec.kind === "text") {

@@ -14,7 +14,7 @@ No installation, account, or backend required.
 - Add text and dates.
 - Draw freely with a pen or eraser.
 - Move and resize elements.
-- Download edited PDFs. Press Done on each signature, text item, or date to include it; unconfirmed items stay in the editor.
+- Download edited PDFs. Press Done on each signature, text item, or date to include it; unfinished new items stay in the editor, and existing items keep their last confirmed version until you press Done again.
 - Process PDFs locally without uploading them to a server.
 
 ## Getting Started
