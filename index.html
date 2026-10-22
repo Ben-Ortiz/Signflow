@@ -961,8 +961,8 @@
           </button>
           <div id="paintControls" class="hidden" style="margin-top: 10px">
             <p class="subtle draw-hint">
-              Choose your settings, then tap Draw again to start. Choose another
-              tool to stop drawing.
+              Choose your settings, then tap Draw again or Close to start.
+              Choose another tool to stop drawing.
             </p>
             <div class="paint-tools">
               <label class="subtle" for="paintColor">Color</label
@@ -1204,6 +1204,12 @@
             draw: "Freehand drawing",
             more: "Document tools",
           }[tool];
+          $("closeSheet").setAttribute(
+            "aria-label",
+            tool === "draw"
+              ? "Close settings and start drawing"
+              : "Close tools",
+          );
           $("app").classList.add("panel-open");
           $("sheetBackdrop").classList.remove("hidden");
           $("editorTools").setAttribute("role", "dialog");
@@ -1239,19 +1245,30 @@
           openTool("text");
         };
         $("mobileMore").onclick = () => openTool("more");
+        function startDrawing() {
+          closeSheet();
+          setPainting(true);
+          message(
+            "Draw on the PDF. Tap Draw for settings; choose another tool to stop drawing.",
+          );
+        }
         $("mobileDraw").onclick = () => {
           if (
             $("app").classList.contains("panel-open") &&
             $("app").dataset.tool === "draw"
           ) {
-            closeSheet();
-            setPainting(true);
-            message(
-              "Draw on the PDF. Tap Draw for settings; choose another tool to stop drawing.",
-            );
+            startDrawing();
           } else openTool("draw");
         };
-        $("closeSheet").onclick = $("sheetBackdrop").onclick = closeSheet;
+        $("closeSheet").onclick = () => {
+          if (
+            $("app").classList.contains("panel-open") &&
+            $("app").dataset.tool === "draw"
+          )
+            startDrawing();
+          else closeSheet();
+        };
+        $("sheetBackdrop").onclick = closeSheet;
         document.addEventListener("keydown", (e) => {
           if (!mobile.matches || !$("app").classList.contains("panel-open"))
             return;
