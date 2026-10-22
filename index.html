@@ -405,28 +405,106 @@
       .hidden {
         display: none !important;
       }
+      .mobile-nav {
+        display: none;
+      }
       @media (max-width: 850px) {
+        html {
+          scroll-padding-top: 76px;
+        }
+        .mobile-nav {
+          display: flex;
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          gap: 8px;
+          flex-wrap: wrap;
+          padding: 10px max(12px, env(safe-area-inset-right)) 10px
+            max(12px, env(safe-area-inset-left));
+          background: #111a2df5;
+          border-bottom: 1px solid #364762;
+        }
+        .mobile-nav button {
+          flex: 1;
+          min-height: 44px;
+          padding: 8px;
+        }
+        .mobile-nav [aria-pressed="true"] {
+          background: #38476d;
+          border-color: #818cf8;
+        }
+        #mobileStatus {
+          width: 100%;
+          font-size: 12px;
+          color: #a9bad6;
+        }
+        #mobileStatus:empty {
+          display: none;
+        }
         .app {
           display: block;
+          min-height: calc(100dvh - 65px);
+        }
+        .app:not(.show-preview) main,
+        .app.show-preview aside {
+          display: none;
         }
         aside {
           border-right: 0;
-          border-bottom: 1px solid #26344e;
-          padding: 20px;
+          padding: 20px max(20px, env(safe-area-inset-right))
+            max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
         }
         main {
-          padding: 17px;
+          padding: 16px 12px max(24px, env(safe-area-inset-bottom));
+        }
+        input, select, #typed, .text-entry {
+          font-size: 16px;
+        }
+        .btn, .segment button, .pages button, select {
+          min-height: 44px;
+        }
+        .toolbar {
+          margin-bottom: 12px;
+        }
+        .pages {
+          width: 100%;
+          justify-content: space-between;
         }
         .workspace {
           padding: 12px;
-          min-height: 500px;
+          min-height: calc(100dvh - 200px);
+        }
+        .pageWrap {
+          touch-action: pan-y pinch-zoom;
+        }
+        .pageWrap.painting {
+          touch-action: none;
+        }
+        .stamp .delete {
+          width: 36px;
+          height: 36px;
+          right: -18px;
+          top: -36px;
+          font-size: 20px;
+        }
+        .stamp .resize {
+          width: 30px;
+          height: 30px;
+          right: -8px;
+          bottom: -20px;
         }
       }
     </style>
   </head>
   <body>
-    <div class="app">
-      <aside>
+    <nav class="mobile-nav" aria-label="Editor views">
+      <button class="btn" id="mobileTools" aria-pressed="true" aria-controls="editorTools">Tools</button>
+      <button class="btn" id="mobilePreview" aria-pressed="false" aria-controls="documentPreview">Preview</button>
+      <button class="btn primary" id="mobileSave" disabled>↓ Save PDF</button>
+      <div id="mobileStatus" role="status"></div>
+    </nav>
+    <div class="app" id="app">
+      <aside id="editorTools">
         <header><span class="logo">✍</span> SignFlow</header>
         <div>
           <h2>1. Choose your document</h2>
@@ -453,7 +531,7 @@
             </div>
           </div>
           <div id="typedControls" style="margin-top: 12px">
-            <input id="typed" placeholder="Your full name" maxlength="70" />
+            <input id="typed" placeholder="Your full name" aria-label="Signature name" maxlength="70" />
             <div id="typedPreview" style="margin-top: 10px">Your signature</div>
           </div>
           <button
@@ -558,16 +636,16 @@
           CDN.
         </div>
       </aside>
-      <main>
+      <main id="documentPreview">
         <div class="toolbar">
           <div>
             <strong>Document preview</strong>
             <div class="subtle">Position signatures and text precisely</div>
           </div>
           <div class="pages">
-            <button id="prev" disabled>←</button
+            <button id="prev" aria-label="Previous page" disabled>←</button
             ><span id="pageLabel" class="subtle">Page 0 of 0</span
-            ><button id="next" disabled>→</button>
+            ><button id="next" aria-label="Next page" disabled>→</button>
           </div>
         </div>
         <div class="workspace" id="workspace">
@@ -608,14 +686,37 @@
           paintTool = "pen",
           activeStroke = null,
           signatureMode = "draw",
-          selected = null,
-          loading = false;
-        const message = (s) => ($("status").textContent = s);
+          selected = null;
+        const message = (s) => {
+          $("status").textContent = s;
+          $("mobileStatus").textContent = s;
+        };
+        const mobile = matchMedia("(max-width: 850px)");
+        function showView(preview, refresh = true) {
+          $("app").classList.toggle("show-preview", preview);
+          $("mobileTools").setAttribute("aria-pressed", String(!preview));
+          $("mobilePreview").setAttribute("aria-pressed", String(preview));
+          if (mobile.matches) {
+            window.scrollTo(0, 0);
+            if (preview && refresh) render();
+          }
+        }
+        $("mobileTools").onclick = () => showView(false);
+        $("mobilePreview").onclick = () => showView(true);
+        $("mobileSave").onclick = () => $("download").click();
+        new MutationObserver(() => {
+          $("mobileSave").disabled = $("download").disabled;
+        }).observe($("download"), { attributes: true, attributeFilter: ["disabled"] });
         pdfjsLib.GlobalWorkerOptions.workerSrc =
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
         function initPad() {
           const rect = pad.getBoundingClientRect(),
             dpr = devicePixelRatio || 1;
+          if (!rect.width || pad.width === Math.round(rect.width * dpr)) return;
+          const saved = document.createElement("canvas");
+          saved.width = pad.width;
+          saved.height = pad.height;
+          saved.getContext("2d").drawImage(pad, 0, 0);
           pad.width = Math.round(rect.width * dpr);
           pad.height = Math.round(150 * dpr);
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -623,8 +724,10 @@
           ctx.lineCap = "round";
           ctx.lineJoin = "round";
           ctx.strokeStyle = "#141827";
+          ctx.drawImage(saved, 0, 0, rect.width, 150);
         }
         initPad();
+        new ResizeObserver(initPad).observe(pad);
         let drawing = false,
           last = null;
         function pt(e) {
@@ -733,6 +836,7 @@
             $("addText").disabled = false;
             $("paintToggle").disabled = false;
             $("download").disabled = false;
+            if (mobile.matches) showView(true, false);
             await render();
             message("PDF loaded. Create a signature to place it.");
           } catch (err) {
@@ -742,14 +846,20 @@
             $("filename").textContent = "No usable PDF selected";
           }
         };
-        async function render() {
-          if (!pdf) return;
+        let renderQueue = Promise.resolve();
+        function render() {
+          renderQueue = renderQueue.catch(() => {}).then(renderPage);
+          return renderQueue;
+        }
+        async function renderPage() {
+          if (!pdf || !$("workspace").clientWidth) return;
           const current = pageNum;
-          loading = true;
           const page = await pdf.getPage(pageNum);
           if (current !== pageNum) return;
           const natural = page.getViewport({ scale: 1 });
-          let available = Math.max(250, $("workspace").clientWidth - 65);
+          const workspaceStyle = getComputedStyle($("workspace"));
+          let available = Math.max(1, $("workspace").clientWidth -
+            parseFloat(workspaceStyle.paddingLeft) - parseFloat(workspaceStyle.paddingRight));
           let scale = Math.min(1.6, available / natural.width);
           let viewport = page.getViewport({ scale });
           pdfCanvas.width = Math.floor(viewport.width);
@@ -759,7 +869,6 @@
           wrap.style.width = viewport.width + "px";
           wrap.style.height = viewport.height + "px";
           await page.render({ canvasContext: pdfCtx, viewport }).promise;
-          loading = false;
           $("pageLabel").textContent = `Page ${pageNum} of ${pages}`;
           $("prev").disabled = pageNum === 1;
           $("next").disabled = pageNum === pages;
@@ -795,6 +904,7 @@
             selected = rec.id;
             drawStamps();
             message("Signature placed. Drag or resize it, then download.");
+            if (mobile.matches) showView(true);
           } catch (e) {
             message(e.message);
           }
@@ -840,6 +950,7 @@
           selected = rec.id;
           drawStamps();
           message("Text added. Drag it into place, then download your PDF.");
+          if (mobile.matches) showView(true);
         };
         function drawStamps() {
           wrap.querySelectorAll(".stamp").forEach((x) => x.remove());
@@ -934,7 +1045,13 @@
           if (!on) activeStroke = null;
           redrawPaint();
         }
-        $("paintToggle").onclick = () => setPainting(!painting);
+        $("paintToggle").onclick = () => {
+          setPainting(!painting);
+          if (painting && mobile.matches) {
+            message("Draw on the PDF. Return to Tools to stop drawing or undo.");
+            showView(true);
+          }
+        };
         $("paintWidth").oninput = () => {
           $("brushLabel").textContent = $("paintWidth").value;
         };
@@ -1153,7 +1270,7 @@
           }
         };
         window.addEventListener("resize", () => {
-          if (pdf && !loading) render();
+          if (pdf) render();
         });
       })();
     </script>
