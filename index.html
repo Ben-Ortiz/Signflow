@@ -583,11 +583,13 @@
           display: flex;
         }
         #app[data-tool="sign"] [data-panel="sign"],
+        #app[data-tool="date"] [data-panel="date"],
         #app[data-tool="text"] [data-panel="text"],
         #app[data-tool="more"] [data-panel="more"] {
           display: block;
         }
         #app[data-tool="sign"] [data-panel="sign"] > h2,
+        #app[data-tool="date"] [data-panel="date"] > h2,
         #app[data-tool="text"] [data-panel="text"] > h2 {
           display: none;
         }
@@ -723,7 +725,13 @@
             <path d="M12 21h9" /></svg></span
         >Sign
       </button>
-      <button class="btn" id="mobileDate" disabled>
+      <button
+        class="btn"
+        id="mobileDate"
+        aria-expanded="false"
+        aria-controls="editorTools"
+        disabled
+      >
         <span class="tool-icon" aria-hidden="true"
           ><svg
             viewBox="0 0 24 24"
@@ -830,19 +838,54 @@
             Place signature
           </button>
         </div>
+        <div data-panel="date">
+          <h2>Add a date</h2>
+          <label class="subtle" for="dateValue">Date</label>
+          <div class="row" style="margin: 6px 0 12px">
+            <input
+              class="text-entry"
+              id="dateValue"
+              type="date"
+              required
+              style="min-width: 0; color-scheme: dark"
+            />
+            <button class="btn" id="today">Today</button>
+          </div>
+          <label class="subtle" for="dateFormat">Date format</label>
+          <select class="text-entry" id="dateFormat" style="margin: 6px 0 12px">
+            <option value="numeric">MM/DD/YYYY</option>
+            <option value="iso">YYYY-MM-DD</option>
+            <option value="long">Month DD, YYYY</option>
+          </select>
+          <label class="subtle" for="dateSize">Font size</label>
+          <select class="text-entry" id="dateSize" style="margin: 6px 0 12px">
+            <option value="10">10 pt</option>
+            <option value="12" selected>12 pt</option>
+            <option value="14">14 pt</option>
+            <option value="18">18 pt</option>
+            <option value="24">24 pt</option>
+          </select>
+          <div
+            id="datePreview"
+            class="tip"
+            aria-live="polite"
+            style="text-align: center; margin-bottom: 12px"
+          ></div>
+          <button class="btn primary wide" id="addDate" disabled>
+            Place date
+          </button>
+        </div>
         <div data-panel="text">
-          <h2>Add text or a date</h2>
+          <h2>Add text</h2>
           <input
             id="plainText"
             class="text-entry"
-            placeholder="Type a date, name, or note"
+            placeholder="Type a name or note"
             maxlength="300"
             aria-label="Text to insert"
           />
           <div class="row" style="margin-top: 9px">
-            <button class="btn" id="today" style="flex: 1">
-              Use today’s date</button
-            ><select
+            <select
               id="textSize"
               class="text-entry"
               style="width: 108px"
@@ -1063,6 +1106,7 @@
         function closeSheet() {
           editingTextId = null;
           $("addText").textContent = "Place text";
+          $("addDate").textContent = "Place date";
           $("app").classList.remove("panel-open");
           $("sheetBackdrop").classList.add("hidden");
           $("editorTools").removeAttribute("role");
@@ -1071,7 +1115,12 @@
           $("documentPreview").inert = false;
           document.querySelector(".mobile-header").inert = false;
           document.querySelector(".mobile-nav").inert = false;
-          for (const id of ["mobileSign", "mobileText", "mobileMore"])
+          for (const id of [
+            "mobileSign",
+            "mobileDate",
+            "mobileText",
+            "mobileMore",
+          ])
             $(id).setAttribute("aria-expanded", "false");
           if (sheetOpener && mobile.matches)
             sheetOpener.focus({ preventScroll: true });
@@ -1081,14 +1130,23 @@
           if (painting) setPainting(false);
           if (tool === "text" && !editingTextId)
             $("addText").textContent = "Place text";
+          if (tool === "date" && !editingTextId)
+            $("addDate").textContent = "Place date";
           if (!mobile.matches) {
-            $(tool === "sign" ? "typed" : "plainText").focus();
+            $(
+              tool === "sign"
+                ? "typed"
+                : tool === "date"
+                  ? "dateValue"
+                  : "plainText",
+            ).focus();
             return;
           }
           sheetOpener = document.activeElement;
           $("app").dataset.tool = tool;
           $("sheetTitle").textContent = {
             sign: "Create your signature",
+            date: "Choose a date",
             text: "Add text",
             more: "Document & drawing",
           }[tool];
@@ -1102,6 +1160,7 @@
           document.querySelector(".mobile-nav").inert = true;
           const trigger = {
             sign: "mobileSign",
+            date: "mobileDate",
             text: "mobileText",
             more: "mobileMore",
           }[tool];
@@ -1310,6 +1369,7 @@
             wrap.classList.remove("hidden");
             $("add").disabled = false;
             $("addText").disabled = false;
+            $("addDate").disabled = false;
             $("paintToggle").disabled = false;
             $("download").disabled = false;
             if (mobile.matches) showView(true, false);
@@ -1333,6 +1393,7 @@
               "download",
               "add",
               "addText",
+              "addDate",
               "paintToggle",
             ])
               $(id).disabled = true;
@@ -1403,6 +1464,7 @@
             "next",
             "add",
             "addText",
+            "addDate",
             "mobileSign",
             "mobileDate",
             "mobileText",
@@ -1474,18 +1536,69 @@
             message(e.message);
           }
         };
+        function todayValue() {
+          const date = new Date();
+          return [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, "0"),
+            String(date.getDate()).padStart(2, "0"),
+          ].join("-");
+        }
+        function formattedDate() {
+          const value = $("dateValue").value;
+          if (!value || !$("dateValue").checkValidity()) return "";
+          const [year, month, day] = value.split("-");
+          if ($("dateFormat").value === "iso") return value;
+          if ($("dateFormat").value === "long")
+            return new Date(
+              Number(year),
+              Number(month) - 1,
+              Number(day),
+            ).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+          return `${month}/${day}/${year}`;
+        }
+        function updateDatePreview() {
+          const value = formattedDate();
+          $("datePreview").textContent = value || "Choose a valid date";
+          $("datePreview").style.fontSize = $("dateSize").value + "px";
+        }
+        $("dateValue").value = todayValue();
+        for (const id of ["dateValue", "dateFormat", "dateSize"])
+          $(id).oninput = updateDatePreview;
         $("today").onclick = () => {
-          $("plainText").value = new Date().toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
+          $("dateValue").value = todayValue();
+          updateDatePreview();
+        };
+        updateDatePreview();
+        $("addDate").onclick = () => {
+          const value = formattedDate();
+          if (!value) {
+            $("dateValue").reportValidity();
+            return;
+          }
+          addTextPlacement(value, Number($("dateSize").value), {
+            fieldType: "date",
+            dateValue: $("dateValue").value,
+            dateFormat: $("dateFormat").value,
           });
         };
-        $("addText").onclick = () => {
+        $("addText").onclick = () =>
+          addTextPlacement(
+            $("plainText").value.trim(),
+            Number($("textSize").value),
+          );
+        function addTextPlacement(
+          value,
+          size,
+          metadata = { fieldType: "text" },
+        ) {
           if (!pdf) return;
-          const value = $("plainText").value.trim();
           if (!value) {
-            message("Type some text or choose today’s date first.");
+            message("Type some text first.");
             return;
           }
           try {
@@ -1494,7 +1607,6 @@
             message("Could not add text: " + err.message);
             return;
           }
-          const size = Number($("textSize").value);
           const naturalWidth = pdfCanvas.width;
           const estimatedWidth = Math.max(
             80,
@@ -1518,6 +1630,7 @@
             ),
             text: value,
             size,
+            ...metadata,
           };
           recordEdit();
           if (existing) Object.assign(existing, rec);
@@ -1526,19 +1639,20 @@
           pendingPlacement = existing ? null : rec.id;
           editingTextId = null;
           $("addText").textContent = "Place text";
+          $("addDate").textContent = "Place date";
           drawStamps();
+          const label = metadata.fieldType === "date" ? "Date" : "Text";
           message(
             existing
-              ? "Text updated. Tap Done to finish."
-              : "Tap the page to place the text. Drag to adjust, then tap Done.",
+              ? `${label} updated. Tap Done to finish.`
+              : `Tap the page to place the ${label.toLowerCase()}. Drag to adjust, then tap Done.`,
           );
           if (mobile.matches) showView(true);
-        };
+        }
         $("mobileDate").onclick = () => {
-          if (painting) setPainting(false);
           editingTextId = null;
-          $("today").click();
-          $("addText").click();
+          updateDatePreview();
+          openTool("date");
         };
         wrap.addEventListener("pointerdown", (e) => {
           if (e.target.closest(".stamp") || !pendingPlacement || painting)
@@ -1673,10 +1787,19 @@
               edit.textContent = "Edit";
               edit.onclick = () => {
                 editingTextId = rec.id;
-                $("plainText").value = rec.text;
-                $("textSize").value = rec.size;
-                $("addText").textContent = "Save text";
-                openTool("text");
+                if (rec.fieldType === "date") {
+                  $("dateValue").value = rec.dateValue;
+                  $("dateFormat").value = rec.dateFormat;
+                  $("dateSize").value = rec.size;
+                  $("addDate").textContent = "Save date";
+                  updateDatePreview();
+                  openTool("date");
+                } else {
+                  $("plainText").value = rec.text;
+                  $("textSize").value = rec.size;
+                  $("addText").textContent = "Save text";
+                  openTool("text");
+                }
               };
               actions.append(edit);
             }
