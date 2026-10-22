@@ -35,7 +35,7 @@ jobs:
       - name: Stage public site files
         run: |
           mkdir -p _site
-          cp index.html styles.css sitemap.xml .nojekyll _site/
+          cp index.html how-to-sign.html about.html contact.html privacy.html styles.css sitemap.xml .nojekyll _site/
           cp -R js assets _site/
       - name: Configure Pages
         uses: actions/configure-pages@v5

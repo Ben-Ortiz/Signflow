@@ -16,7 +16,7 @@ test("search metadata and sitemap agree on the canonical project URL", () => {
   assert.ok(!/noindex|nofollow/.test(html));
   const sitemap = readFileSync(resolve(root, "sitemap.xml"), "utf8");
   assert.ok(sitemap.includes(`<loc>${canonical}</loc>`));
-  assert.equal((sitemap.match(/<loc>/g) || []).length, 1);
+  assert.equal((sitemap.match(/<loc>/g) || []).length, 5);
 });
 
 test("structured app information is parseable and matches the actual free application", () => {

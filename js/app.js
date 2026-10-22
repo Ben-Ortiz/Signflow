@@ -38,6 +38,11 @@
   }
   const { PAGE_WIDTH } = SignFlowCore;
   const mobile = matchMedia("(max-width: 850px)");
+  for (const link of document.querySelectorAll(".site-menu a")) {
+    link.addEventListener("click", () => {
+      link.closest("details").open = false;
+    });
+  }
   let textFont, fontError;
   const textFontReady = PDFLib.PDFDocument.create()
     .then((doc) => doc.embedFont(PDFLib.StandardFonts.Helvetica))

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>About SignFlow — A Simple Browser-Based PDF Signer</title>
+    <meta
+      name="description"
+      content="Learn why SignFlow was made, how it processes PDFs locally, and the design choices behind its free mobile and desktop PDF signing workflow."
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="theme-color" content="#0a1020" />
+    <link
+      rel="canonical"
+      href="https://ben-ortiz.github.io/Signflow/about.html"
+    />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css?v=554274f6c8c9" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="About SignFlow — A Simple Browser-Based PDF Signer"
+    />
+    <meta
+      property="og:description"
+      content="Learn why SignFlow was made, how it processes PDFs locally, and the design choices behind its free mobile and desktop PDF signing workflow."
+    />
+    <meta
+      property="og:url"
+      content="https://ben-ortiz.github.io/Signflow/about.html"
+    />
+    <meta
+      property="og:image"
+      content="https://ben-ortiz.github.io/Signflow/assets/social-preview.png"
+    />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        "name": "About SignFlow \u2014 A Simple Browser-Based PDF Signer",
+        "url": "https://ben-ortiz.github.io/Signflow/about.html",
+        "description": "Learn why SignFlow was made, how it processes PDFs locally, and the design choices behind its free mobile and desktop PDF signing workflow.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "SignFlow",
+          "url": "https://ben-ortiz.github.io/Signflow/"
+        }
+      }
+    </script>
+  </head>
+  <body class="info-page">
+    <nav class="site-nav" aria-label="Site navigation">
+      <a class="site-brand" href="index.html">✎ SignFlow</a>
+      <div class="site-links">
+        <a href="index.html">PDF editor</a
+        ><a href="how-to-sign.html">How to sign</a
+        ><a href="about.html" aria-current="page">About</a
+        ><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a>
+      </div>
+    </nav>
+    <main id="content">
+      <h1>About SignFlow</h1>
+      <p class="page-intro">
+        Signing a PDF should be straightforward: open the document, add what you
+        need, and download the result.
+      </p>
+      <section>
+        <h2>Why this project exists</h2>
+        <p>
+          SignFlow began with a personal need for a simple, free way to sign
+          PDFs. It focuses on that everyday task without requiring an account,
+          subscription, installed application, or a document upload to an
+          application server.
+        </p>
+        <p>
+          You can draw or type a signature, add text and dates, draw on pages,
+          and export a copy. The mobile layout keeps the document central, while
+          desktop provides tools beside the preview.
+        </p>
+      </section>
+      <section>
+        <h2>Who built it</h2>
+        <p>
+          SignFlow is a project by
+          <a href="https://github.com/Ben-Ortiz">Ben-Ortiz on GitHub</a>. It was
+          developed through an iterative, AI-assisted workflow using ChatGPT
+          Codex, with product feedback, hands-on testing, fixes, and refactoring
+          shaping the app.
+        </p>
+        <p>
+          For the source code, technical decisions, and development
+          instructions, visit the
+          <a href="https://github.com/Ben-Ortiz/Signflow">SignFlow repository</a
+          >.
+        </p>
+      </section>
+      <section>
+        <h2>Designed around confirmation</h2>
+        <p>
+          Pressing Done separates a finished item from a draft. That makes it
+          possible to keep confirmed work in the exported PDF while leaving
+          unfinished additions out. Finish or delete the current item before
+          starting another; drawing has its own Done and Delete drawing
+          controls.
+        </p>
+        <p>
+          This behavior grew out of testing real editing sequences: adding
+          several signatures, changing pages, moving dates, and saving while
+          something was still being adjusted.
+        </p>
+      </section>
+      <section>
+        <h2>How it works</h2>
+        <p>
+          The interface uses HTML, CSS, and vanilla JavaScript. PDF.js displays
+          pages, pdf-lib generates the edited document, and the browser's Canvas
+          and Pointer Events APIs support signatures and drawing. GitHub Pages
+          hosts the static site.
+        </p>
+        <p>
+          PDF bytes and annotations are processed in browser memory. An export
+          uses a snapshot so subsequent edits cannot change that in-progress
+          download. See the <a href="privacy.html">privacy policy</a> for
+          hosting, library requests, and storage details.
+        </p>
+      </section>
+      <section>
+        <h2>What SignFlow does and does not do</h2>
+        <p>
+          SignFlow adds visible electronic signatures and annotations. It does
+          not edit existing PDF text, provide certificate-backed digital
+          signatures, or determine whether a signature meets a recipient's
+          requirements. Save your work before leaving the page; there is no
+          cloud account or automatic document backup.
+        </p>
+        <p>
+          <a href="how-to-sign.html">Read the signing guide</a> or
+          <a href="contact.html">report a problem</a>.
+        </p>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <p>SignFlow · Free PDF signing in your browser</p>
+      <nav aria-label="Footer navigation">
+        <a href="index.html">PDF editor</a
+        ><a href="how-to-sign.html">How to sign</a><a href="about.html">About</a
+        ><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a>
+      </nav>
+      <p>
+        <a href="https://github.com/Ben-Ortiz/Signflow">Project on GitHub</a>
+      </p>
+    </footer>
+  </body>
+</html>

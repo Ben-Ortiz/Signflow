@@ -136,6 +136,7 @@ python tests/drawing.py
 python tests/confirmation.py
 python tests/signature-sequence.py
 python tests/item-sequence.py
+python tests/site-pages.py
 ```
 
 The browser suite exercises mobile and desktop viewport sizes, page navigation,
@@ -160,3 +161,12 @@ The public page includes search metadata, a canonical URL, a sitemap, structured
 app information, signing instructions, FAQs, and social previews. See
 [Search visibility](docs/search-visibility.md) for the site owner's Google Search
 Console verification and sitemap submission steps.
+
+## Site information and AdSense preparation
+
+The site includes a [signing guide](how-to-sign.html), [About](about.html),
+[Contact](contact.html), and [Privacy policy](privacy.html), with navigation on
+mobile and desktop. Advertising is currently off. See
+[AdSense preparation](docs/adsense-readiness.md) for the remaining account-specific
+verification, consent, and origin-root ads.txt steps. AdSense approval is not
+guaranteed by these additions.

@@ -52,7 +52,7 @@
       name="twitter:image:alt"
       content="SignFlow — free PDF signing in your browser, with no signup."
     />
-    <link rel="stylesheet" href="styles.css?v=7ac59915713d" />
+    <link rel="stylesheet" href="styles.css?v=554274f6c8c9" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -108,9 +108,30 @@
     </script>
   </head>
   <body>
+    <nav class="site-nav editor-site-nav" aria-label="Site navigation">
+      <a class="site-brand" href="#app">✎ SignFlow</a>
+      <div class="site-links">
+        <a href="#app" aria-current="page">PDF editor</a
+        ><a href="how-to-sign.html" target="_blank" rel="noopener"
+          >How to sign</a
+        ><a href="about.html" target="_blank" rel="noopener">About</a
+        ><a href="contact.html" target="_blank" rel="noopener">Contact</a
+        ><a href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+      </div>
+    </nav>
     <div class="mobile-header">
       <div class="mobile-title">
         <strong>SignFlow</strong>
+        <details class="site-menu">
+          <summary>Help</summary>
+          <nav aria-label="Help and information (opens in a new tab)">
+            <a href="how-to-sign.html" target="_blank" rel="noopener"
+              >How to sign</a
+            ><a href="about.html" target="_blank" rel="noopener">About</a
+            ><a href="contact.html" target="_blank" rel="noopener">Contact</a
+            ><a href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+          </nav>
+        </details>
         <button
           class="btn"
           id="mobileUndo"
@@ -465,15 +486,21 @@
         </div>
         <div class="workspace" id="workspace">
           <div class="empty" id="empty">
-            <div class="icon">▤</div>
+            <div class="icon" aria-hidden="true">▤</div>
+            <p class="hero-eyebrow">
+              No account · No subscription · Local PDF processing
+            </p>
             <h1>Sign PDFs online for free</h1>
             <p>
               Draw or type your signature, add text and dates, then download
               your PDF. No signup. Your document stays in your browser.
             </p>
-            <label class="upload mobile-upload" for="pdfFile"
-              >↑ Open a PDF</label
-            >
+            <label class="upload hero-upload" for="pdfFile">↑ Open a PDF</label>
+            <p class="hero-help">
+              <a href="how-to-sign.html" target="_blank" rel="noopener"
+                >New here? Read the signing guide →</a
+              >
+            </p>
           </div>
           <div id="pageWrap" class="pageWrap hidden">
             <canvas id="pdfCanvas"></canvas
@@ -582,12 +609,16 @@
           </p>
         </details>
       </section>
-      <footer>
+      <footer class="site-footer">
+        <p>SignFlow · Free PDF signing in your browser</p>
+        <nav aria-label="Footer navigation">
+          <a href="index.html">PDF editor</a
+          ><a href="how-to-sign.html">How to sign</a
+          ><a href="about.html">About</a><a href="contact.html">Contact</a
+          ><a href="privacy.html">Privacy</a>
+        </nav>
         <p>
-          SignFlow · Free PDF signing and annotations ·
-          <a href="https://github.com/Ben-Ortiz/Signflow"
-            >View the project on GitHub</a
-          >
+          <a href="https://github.com/Ben-Ortiz/Signflow">Project on GitHub</a>
         </p>
       </footer>
     </article>
@@ -606,6 +637,6 @@
     ></script>
     <script defer src="js/core.js?v=775453b"></script>
     <script defer src="js/pdf-export.js?v=775453b"></script>
-    <script defer src="js/app.js?v=e27b01743521"></script>
+    <script defer src="js/app.js?v=315bf226a89d"></script>
   </body>
 </html>
