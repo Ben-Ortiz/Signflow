@@ -14,7 +14,7 @@ No installation, account, or backend required.
 - Add text and dates.
 - Draw freely with a pen or eraser.
 - Move and resize elements.
-- Download edited PDFs.
+- Download edited PDFs. Press Done on each signature, text item, or date to include it; unconfirmed items stay in the editor.
 - Process PDFs locally without uploading them to a server.
 
 ## Getting Started
@@ -106,6 +106,7 @@ and run:
 ```bash
 python tests/browser.py
 python tests/drawing.py
+python tests/confirmation.py
 ```
 
 `SIGNFLOW_URL` overrides the local URL; `CHROMIUM_PATH` selects an installed Chromium.

@@ -1343,7 +1343,11 @@
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 30000);
-      message("Saved! Your edited PDF has been downloaded.");
+      message(
+        snapshot.placements.some((item) => item.confirmed !== true)
+          ? "Saved! Unconfirmed items were left out. Tap Done on each item to include it next time."
+          : "Saved! Your edited PDF has been downloaded.",
+      );
     } catch (e) {
       message("Could not save PDF: " + e.message);
     } finally {

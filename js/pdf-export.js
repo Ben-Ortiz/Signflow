@@ -17,7 +17,8 @@ window.SignFlowExport = async function ({ bytes, placements, strokes }) {
     });
     const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
     const textLayout = (rec) => SignFlowCore.textLayout(rec, font);
-    for (const rec of placements) {
+    // Drafts remain editable in the UI, but only Done commits them to export.
+    for (const rec of placements.filter((item) => item.confirmed === true)) {
       const page = doc.getPage(rec.page - 1),
         { width, height } = page.getSize();
       if (rec.kind === "text") {
