@@ -111,6 +111,7 @@ with sync_playwright() as p:
         page.mouse.move(x, y + 25, steps=4)
         page.mouse.up()
         assert alpha(0.5, 0.4) == 0
+        page.locator("#doneDrawing").click()
         with page.expect_download() as dl:
             page.locator("#mobileSave" if mobile else "#download").click()
         out = ARTIFACTS / f"partial-erase-{width}.pdf"

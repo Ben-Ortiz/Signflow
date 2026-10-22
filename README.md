@@ -11,10 +11,10 @@ No installation, account, or backend required.
 
 - Upload and preview multipage PDFs.
 - Draw or type signatures. Finish each signature with Done or delete it before adding another.
-- Add text and dates.
-- Draw freely with a pen or eraser.
+- Add text and dates. Finish or delete the current item before starting another.
+- Draw freely with a pen or eraser. Press Done to keep a session, or Delete drawing to discard it; earlier confirmed drawings are preserved.
 - Move and resize elements.
-- Download edited PDFs. Press Done on each signature, text item, or date to include it; unfinished new items stay in the editor, and existing items keep their last confirmed version until you press Done again.
+- Download edited PDFs. Press Done on each signature, text item, date, or drawing session to include it; unfinished new items stay in the editor, and existing items keep their last confirmed version until you press Done again.
 - Process PDFs locally without uploading them to a server.
 
 ## Getting Started
@@ -108,6 +108,7 @@ python tests/browser.py
 python tests/drawing.py
 python tests/confirmation.py
 python tests/signature-sequence.py
+python tests/item-sequence.py
 ```
 
 `SIGNFLOW_URL` overrides the local URL; `CHROMIUM_PATH` selects an installed Chromium.

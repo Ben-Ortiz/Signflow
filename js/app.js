@@ -12,6 +12,7 @@
     pages = 0,
     placements = [],
     strokes = [],
+    drawingDraft = null,
     paintHistory = [],
     painting = false,
     paintTool = "pen",
@@ -58,13 +59,13 @@
       navigating || !editHistory.length;
   }
   function recordEdit() {
-    editHistory.push(structuredClone({ placements, strokes }));
+    editHistory.push(structuredClone({ placements, strokes, drawingDraft }));
     if (editHistory.length > 50) editHistory.shift();
     updateUndo();
   }
   function undoEdit() {
     if (!editHistory.length) return;
-    ({ placements, strokes } = editHistory.pop());
+    ({ placements, strokes, drawingDraft } = editHistory.pop());
     selected = pendingPlacement = editingTextId = null;
     paintHistory = [];
     updateUndo();
@@ -98,6 +99,14 @@
     sheetOpener = null;
   }
   function openTool(tool) {
+    if (
+      ["sign", "text", "date", "draw"].includes(tool) &&
+      !requireFinishedItem({
+        editingId: editingTextId,
+        allowDrawing: tool === "draw",
+      })
+    )
+      return;
     if (painting && tool !== "draw") setPainting(false);
     if (tool === "draw") $("paintControls").classList.remove("hidden");
     if (tool === "text" && !editingTextId)
@@ -153,7 +162,7 @@
     $("closeSheet").focus({ preventScroll: true });
   }
   $("mobileSign").onclick = () => {
-    if (requireConfirmedSignatures()) openTool("sign");
+    if (requireFinishedItem()) openTool("sign");
   };
   $("mobileText").onclick = () => {
     editingTextId = null;
@@ -161,10 +170,11 @@
   };
   $("mobileMore").onclick = () => openTool("more");
   function startDrawing() {
+    if (!requireFinishedItem({ allowDrawing: true })) return;
     closeSheet();
     setPainting(true);
     message(
-      "Draw on the PDF. Tap Draw for settings; choose another tool to stop drawing.",
+      "Draw on the PDF. Tap Done when finished, or Delete drawing to discard this session.",
     );
   }
   $("mobileDraw").onclick = () => {
@@ -228,6 +238,7 @@
           ...structuredClone({
             placements,
             strokes,
+            drawingDraft,
             selected,
             pendingPlacement,
           }),
@@ -266,7 +277,8 @@
       suppressTouch = true;
       cancelDocumentDrag?.();
       if (touchSnapshot) {
-        ({ placements, strokes, selected, pendingPlacement } = touchSnapshot);
+        ({ placements, strokes, drawingDraft, selected, pendingPlacement } =
+          touchSnapshot);
         editHistory = touchSnapshot.edits;
         paintHistory = touchSnapshot.paintEdits;
         updateUndo();
@@ -566,6 +578,7 @@
       $("workspace").scrollTop = 0;
       placements = [];
       strokes = [];
+      drawingDraft = null;
       paintHistory = [];
       editHistory = [];
       selected = pendingPlacement = editingTextId = null;
@@ -731,17 +744,37 @@
   }
   $("prev").onclick = () => changePage(-1);
   $("next").onclick = () => changePage(1);
-  function requireConfirmedSignatures() {
+  function requireFinishedItem({
+    editingId = null,
+    allowDrawing = false,
+  } = {}) {
     const unfinished = placements.find(
-      (item) => item.kind !== "text" && item.confirmed !== true,
+      (item) => item.confirmed !== true && item.id !== editingId,
     );
-    if (!unfinished) return true;
+    if (!unfinished) {
+      if (!drawingDraft || allowDrawing) return true;
+      closeSheet();
+      setPainting(false);
+      message("Tap Done or Delete drawing before adding another item.");
+      $("drawingActions").scrollIntoView({
+        block: "center",
+        inline: "nearest",
+      });
+      $("doneDrawing").focus({ preventScroll: true });
+      return false;
+    }
     selected = unfinished.id;
     if (painting) setPainting(false);
     closeSheet();
     drawStamps();
+    const label =
+      unfinished.kind !== "text"
+        ? "signature"
+        : unfinished.fieldType === "date"
+          ? "date"
+          : "text";
     message(
-      "Tap Done on your unfinished signature, or delete it, before adding another signature.",
+      `Tap Done on your unfinished ${label}, or delete it, before adding another item.`,
     );
     const stamp = wrap.querySelector(".stamp.selected");
     stamp?.scrollIntoView({ block: "center", inline: "nearest" });
@@ -751,7 +784,7 @@
     return false;
   }
   $("add").onclick = () => {
-    if (!pdf || !requireConfirmedSignatures()) return;
+    if (!pdf || !requireFinishedItem()) return;
     try {
       const url = signatureImage();
       const rec = {
@@ -829,7 +862,7 @@
   $("addText").onclick = () =>
     addTextPlacement($("plainText").value.trim(), Number($("textSize").value));
   function addTextPlacement(value, size, metadata = { fieldType: "text" }) {
-    if (!pdf) return;
+    if (!pdf || !requireFinishedItem({ editingId: editingTextId })) return;
     if (!value) {
       message("Type some text first.");
       return;
@@ -1129,11 +1162,12 @@
     redrawPaint();
   }
   $("paintToggle").onclick = () => {
+    if (!painting && !requireFinishedItem({ allowDrawing: true })) return;
     setPainting(!painting);
     if (mobile.matches) $("paintControls").classList.remove("hidden");
     if (painting && mobile.matches) {
       message(
-        "Draw on the PDF. Tap Draw for settings; choose another tool to stop drawing.",
+        "Draw on the PDF. Tap Done when finished, or Delete drawing to discard this session.",
       );
       showView(true);
     }
@@ -1213,15 +1247,33 @@
       y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
     };
   }
+  function updateDrawingActions() {
+    $("drawingActions").classList.toggle("hidden", !drawingDraft);
+  }
+  $("doneDrawing").onclick = () => {
+    if (!drawingDraft) return;
+    recordEdit();
+    drawingDraft = null;
+    paintHistory = [];
+    closeSheet();
+    setPainting(false);
+    message("Drawing confirmed. You can add another item.");
+  };
+  $("deleteDrawing").onclick = () => {
+    if (!drawingDraft) return;
+    recordEdit();
+    strokes = drawingDraft.strokes;
+    drawingDraft = null;
+    paintHistory = [];
+    closeSheet();
+    setPainting(false);
+    message("Unfinished drawing deleted. Previous drawings are kept.");
+  };
   function savePaintHistory() {
     recordEdit();
-    paintHistory.push(
-      strokes.map((s) => ({
-        ...s,
-        points: s.points.map((p) => ({ ...p })),
-      })),
-    );
+    paintHistory.push(structuredClone({ strokes, drawingDraft }));
     if (paintHistory.length > 80) paintHistory.shift();
+    if (!drawingDraft) drawingDraft = { strokes: structuredClone(strokes) };
   }
   function eraseBetween(from, to) {
     const { strokes: next, changed } = SignFlowCore.eraseStrokes(strokes, {
@@ -1290,6 +1342,7 @@
     });
   paintCanvas.addEventListener("pointerleave", hideBrushCursor);
   function redrawPaint() {
+    updateDrawingActions();
     if (!paintCanvas || !pdf) return;
     paintCanvas.width = pdfCanvas.width;
     paintCanvas.height = pdfCanvas.height;
@@ -1328,7 +1381,7 @@
       return;
     }
     recordEdit();
-    strokes = paintHistory.pop();
+    ({ strokes, drawingDraft } = paintHistory.pop());
     redrawPaint();
     message("Drawing change undone.");
   };
@@ -1343,13 +1396,22 @@
   let exporting = false;
   $("download").onclick = async () => {
     if (!pdf || !bytes || exporting) return;
-    if (!placements.length && !strokes.length) {
+    if (
+      !placements.length &&
+      !strokes.length &&
+      !drawingDraft?.strokes.length &&
+      !editHistory.length
+    ) {
       message("Add a signature, text, or drawing before downloading.");
       return;
     }
     const snapshot = {
       bytes: bytes.slice(),
-      ...structuredClone({ placements, strokes }),
+      ...structuredClone({
+        placements,
+        strokes: drawingDraft?.strokes ?? strokes,
+      }),
+      hasUnconfirmedDrawing: Boolean(drawingDraft),
     };
     const filename = $("filename").textContent;
     exporting = true;
@@ -1368,7 +1430,8 @@
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 30000);
       message(
-        snapshot.placements.some((item) => item.confirmed !== true)
+        snapshot.hasUnconfirmedDrawing ||
+          snapshot.placements.some((item) => item.confirmed !== true)
           ? "Saved! Unconfirmed changes were left out. Tap Done to include them next time."
           : "Saved! Your edited PDF has been downloaded.",
       );

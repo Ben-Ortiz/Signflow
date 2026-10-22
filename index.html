@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>SignFlow — PDF Signer</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=9d10c27ad1c7" />
   </head>
   <body>
     <div class="mobile-header">
@@ -264,7 +264,7 @@
           <div id="paintControls" class="hidden" style="margin-top: 10px">
             <p class="subtle draw-hint">
               Choose your settings, then tap Draw again or Close to start.
-              Choose another tool to stop drawing.
+              Finish with Done or Delete drawing before adding another item.
             </p>
             <div class="paint-tools">
               <label class="subtle" for="paintColor">Color</label
@@ -297,7 +297,7 @@
             <div class="subtle" style="margin-top: 9px">
               The circle shows your pen or eraser size at the current zoom. The
               eraser removes only the part you touch. Undo restores one drawing
-              or erasing action. Drawings are included in your PDF.
+              or erasing action. Press Done to include your drawing in the PDF.
             </div>
           </div>
         </div>
@@ -352,6 +352,16 @@
           </div>
           <button class="btn undo-button" id="undoEdit" disabled>↶ Undo</button>
         </div>
+        <div
+          id="drawingActions"
+          class="drawing-actions hidden"
+          role="group"
+          aria-label="Finish drawing"
+        >
+          <span>Unfinished drawing</span>
+          <button class="btn primary" id="doneDrawing">Done</button>
+          <button class="btn" id="deleteDrawing">Delete drawing</button>
+        </div>
         <div class="workspace" id="workspace">
           <div class="empty" id="empty">
             <div class="icon">▤</div>
@@ -382,6 +392,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="js/core.js?v=775453b"></script>
     <script src="js/pdf-export.js?v=775453b"></script>
-    <script src="js/app.js?v=b192d2302e7c"></script>
+    <script src="js/app.js?v=37e000726729"></script>
   </body>
 </html>

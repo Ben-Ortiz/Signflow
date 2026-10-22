@@ -737,3 +737,31 @@ main {
     display: none;
   }
 }
+
+.drawing-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #eff6ff;
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 35;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px #18203626;
+}
+.drawing-actions span {
+  margin-right: auto;
+  font-size: 13px;
+}
+@media (max-width: 850px) {
+  .drawing-actions {
+    left: 12px;
+    right: 12px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}

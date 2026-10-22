@@ -92,6 +92,10 @@ with sync_playwright() as playwright:
         page.locator(".stamp").nth(1).press("Enter")
         page.locator('.stamp.selected button[aria-label="Remove item"]').click()
 
+        page.locator(".stamp").nth(0).focus()
+        page.locator(".stamp").nth(0).press("Enter")
+        page.locator('.stamp.selected button[aria-label="Confirm position"]').click()
+
         # Confirmed signature stays included while new text and date remain drafts.
         if width < 850:
             page.locator("#mobileText").click()
