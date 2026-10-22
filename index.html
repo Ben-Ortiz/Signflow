@@ -347,6 +347,49 @@
         background: #6366f1;
         border-color: #818cf8;
       }
+      .brush-preview {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      .brush-sample {
+        width: 72px;
+        height: 72px;
+        display: grid;
+        place-items: center;
+        border: 1px solid #364762;
+        border-radius: 10px;
+        background: #fff;
+      }
+      #brushPreview {
+        border-radius: 50%;
+      }
+      .brush-cursor {
+        position: absolute;
+        z-index: 6;
+        pointer-events: none;
+        box-sizing: content-box;
+        border: 1px solid white;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px #111;
+        transform: translate(-50%, -50%);
+      }
+      .brush-cursor.eraser {
+        border-style: dashed;
+      }
+      #cursorSizeLabel {
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 20px);
+        transform: translateX(-50%);
+        padding: 5px 7px;
+        border-radius: 6px;
+        background: #111a2d;
+        color: #fff;
+        font: 12px/1.2 system-ui;
+        white-space: nowrap;
+      }
       .stamp {
         position: absolute;
         left: 0;
@@ -976,7 +1019,15 @@
                 min="1"
                 max="18"
                 value="3"
-              /><span class="subtle" id="brushLabel">3</span>
+              /><span class="subtle" id="brushLabel" aria-live="polite"
+                >3 pt</span
+              >
+            </div>
+            <div class="brush-preview">
+              <div class="brush-sample"><div id="brushPreview"></div></div>
+              <span class="subtle" id="brushPreviewLabel"
+                >Pen size preview</span
+              >
             </div>
             <div class="row" style="margin-top: 10px; flex-wrap: wrap">
               <button class="btn" id="penTool">Pen</button
@@ -985,9 +1036,9 @@
               ><button class="btn" id="clearPaint">Clear page</button>
             </div>
             <div class="subtle" style="margin-top: 9px">
-              Draw with mouse, pen, or touch. Eraser removes entire strokes;
-              undo restores the last drawing change. Drawings are included in
-              your PDF.
+              The circle shows your pen or eraser size at the current zoom. The
+              eraser removes only the part you touch. Undo restores one drawing
+              or erasing action. Drawings are included in your PDF.
             </div>
           </div>
         </div>
@@ -1057,6 +1108,13 @@
           <div id="pageWrap" class="pageWrap hidden">
             <canvas id="pdfCanvas"></canvas
             ><canvas id="paintCanvas" class="paint-layer"></canvas>
+            <div
+              id="brushCursor"
+              class="brush-cursor hidden"
+              aria-hidden="true"
+            >
+              <span id="cursorSizeLabel"></span>
+            </div>
           </div>
         </div>
       </main>
@@ -1358,6 +1416,10 @@
               updateUndo();
             }
             activeStroke = null;
+            erasing = false;
+            eraserLast = null;
+            eraserRecorded = false;
+            hideBrushCursor();
             const center = pinchGeometry(points),
               rect = wrap.getBoundingClientRect();
             pinch = {
@@ -2180,7 +2242,12 @@
             : "✎ Enable freehand drawing";
           $("paintToggle").classList.toggle("active", on);
           $("mobileDraw").setAttribute("aria-pressed", String(on));
-          if (!on) activeStroke = null;
+          if (!on) {
+            activeStroke = null;
+            erasing = false;
+            eraserLast = null;
+            hideBrushCursor();
+          }
           redrawPaint();
         }
         $("paintToggle").onclick = () => {
@@ -2193,14 +2260,69 @@
             showView(true);
           }
         };
+        const brushSizes = { pen: 3, eraser: 18 };
+        let erasing = false,
+          eraserLast = null,
+          eraserRecorded = false;
+        let cursorPoint = null;
+        function hideBrushCursor() {
+          $("brushCursor").classList.add("hidden");
+          cursorPoint = null;
+        }
+        function updateBrushSize() {
+          const size = brushSizes[paintTool];
+          const diameter =
+            (size * (paintCanvas.getBoundingClientRect().width || 612)) / 612;
+          const label = `${paintTool === "eraser" ? "Eraser" : "Pen"}: ${size} pt`;
+          $("brushLabel").textContent = size + " pt";
+          $("paintWidth").setAttribute(
+            "aria-label",
+            `${paintTool === "eraser" ? "Eraser" : "Pen"} diameter`,
+          );
+          $("paintWidth").setAttribute("aria-valuetext", size + " points");
+          $("brushPreviewLabel").textContent =
+            label + ` · ${Math.round(diameter)} px on the page`;
+          $("brushPreview").style.width = $("brushPreview").style.height =
+            Math.min(52, diameter) + "px";
+          $("brushPreview").style.background =
+            paintTool === "eraser" ? "transparent" : $("paintColor").value;
+          $("brushPreview").style.outline =
+            paintTool === "eraser" ? "2px dashed #475569" : "none";
+          $("brushCursor").style.width = $("brushCursor").style.height =
+            diameter + "px";
+          $("brushCursor").classList.toggle("eraser", paintTool === "eraser");
+          $("cursorSizeLabel").textContent = label;
+          if (cursorPoint) {
+            $("brushCursor").style.left = cursorPoint.x * 100 + "%";
+            $("brushCursor").style.top = cursorPoint.y * 100 + "%";
+          }
+        }
+        function showBrushCursor(e) {
+          if (!painting || pinch || suppressTouch) {
+            hideBrushCursor();
+            return;
+          }
+          cursorPoint = paintPoint(e);
+          updateBrushSize();
+          $("brushCursor").classList.remove("hidden");
+        }
         $("paintWidth").oninput = () => {
-          $("brushLabel").textContent = $("paintWidth").value;
+          brushSizes[paintTool] = +$("paintWidth").value;
+          updateBrushSize();
         };
+        $("paintColor").oninput = updateBrushSize;
         function setPaintTool(t) {
           paintTool = t;
+          erasing = false;
+          eraserLast = null;
+          $("paintWidth").max = t === "eraser" ? "64" : "18";
+          $("paintWidth").value = brushSizes[t];
           $("penTool").classList.toggle("active", t === "pen");
           $("eraserTool").classList.toggle("active", t === "eraser");
-          paintCanvas.style.cursor = t === "eraser" ? "cell" : "crosshair";
+          $("penTool").setAttribute("aria-pressed", String(t === "pen"));
+          $("eraserTool").setAttribute("aria-pressed", String(t === "eraser"));
+          paintCanvas.style.cursor = "none";
+          updateBrushSize();
         }
         setPaintTool("pen");
         $("penTool").onclick = () => setPaintTool("pen");
@@ -2222,38 +2344,147 @@
           );
           if (paintHistory.length > 80) paintHistory.shift();
         }
-        function eraseAt(p) {
-          const margin = 0.012;
-          let candidates = strokes.filter((s) => s.page === pageNum);
-          let hit = candidates.findLast((s) =>
-            s.points.some(
-              (q) =>
-                Math.hypot(
-                  (q.x - p.x) * paintCanvas.width,
-                  (q.y - p.y) * paintCanvas.height,
-                ) < Math.max(12, s.width + 10),
-            ),
-          );
-          if (hit) {
-            savePaintHistory();
-            strokes = strokes.filter((s) => s !== hit);
-            redrawPaint();
+        // Find the part of a stroke segment inside the swept, circular eraser.
+        // A capsule (two circles plus a rectangle) also covers fast pointer moves.
+        function erasedIntervals(a, b, from, to, radius) {
+          const dx = b.x - a.x,
+            dy = b.y - a.y;
+          const intervals = [];
+          function circle(center) {
+            const x = a.x - center.x,
+              y = a.y - center.y;
+            const aa = dx * dx + dy * dy;
+            if (aa < 1e-12) {
+              if (x * x + y * y <= radius * radius) intervals.push([0, 1]);
+              return;
+            }
+            const bb = 2 * (x * dx + y * dy),
+              cc = x * x + y * y - radius * radius;
+            const discriminant = bb * bb - 4 * aa * cc;
+            if (discriminant < 0) return;
+            const root = Math.sqrt(discriminant);
+            const lo = Math.max(0, (-bb - root) / (2 * aa));
+            const hi = Math.min(1, (-bb + root) / (2 * aa));
+            if (lo < hi) intervals.push([lo, hi]);
           }
+          circle(from);
+          circle(to);
+          const length = Math.hypot(to.x - from.x, to.y - from.y);
+          if (length > 1e-9) {
+            const ux = (to.x - from.x) / length,
+              uy = (to.y - from.y) / length;
+            let lo = 0,
+              hi = 1;
+            function band(value, delta, min, max) {
+              if (Math.abs(delta) < 1e-12) return value >= min && value <= max;
+              const t1 = (min - value) / delta,
+                t2 = (max - value) / delta;
+              lo = Math.max(lo, Math.min(t1, t2));
+              hi = Math.min(hi, Math.max(t1, t2));
+              return lo < hi;
+            }
+            const x = a.x - from.x,
+              y = a.y - from.y;
+            if (
+              band(x * ux + y * uy, dx * ux + dy * uy, 0, length) &&
+              band(-x * uy + y * ux, -dx * uy + dy * ux, -radius, radius)
+            )
+              intervals.push([lo, hi]);
+          }
+          intervals.sort((x, y) => x[0] - y[0]);
+          const merged = [];
+          for (const interval of intervals) {
+            const last = merged.at(-1);
+            if (last && interval[0] <= last[1] + 1e-9)
+              last[1] = Math.max(last[1], interval[1]);
+            else merged.push(interval.slice());
+          }
+          return merged;
+        }
+        function eraseBetween(from, to) {
+          const height = (612 * paintCanvas.height) / paintCanvas.width;
+          const metric = (point) => ({ x: point.x * 612, y: point.y * height });
+          const start = metric(from),
+            end = metric(to);
+          let changed = false;
+          const next = strokes.flatMap((stroke) => {
+            if (stroke.page !== pageNum) return [stroke];
+            const radius = (brushSizes.eraser + stroke.width) / 2;
+            if (stroke.points.length === 1) {
+              const point = metric(stroke.points[0]);
+              if (erasedIntervals(point, point, start, end, radius).length) {
+                changed = true;
+                return [];
+              }
+              return [stroke];
+            }
+            let cut = false;
+            const pieces = [];
+            for (let i = 1; i < stroke.points.length; i++) {
+              const a = stroke.points[i - 1],
+                b = stroke.points[i];
+              const intervals = erasedIntervals(
+                metric(a),
+                metric(b),
+                start,
+                end,
+                radius,
+              );
+              if (intervals.length) cut = true;
+              const outside = [];
+              let t = 0;
+              for (const [lo, hi] of intervals) {
+                if (lo > t) outside.push([t, lo]);
+                t = Math.max(t, hi);
+              }
+              if (t < 1) outside.push([t, 1]);
+              for (const [lo, hi] of outside) {
+                const point = (t) => ({
+                  x: a.x + (b.x - a.x) * t,
+                  y: a.y + (b.y - a.y) * t,
+                });
+                const first = point(lo),
+                  last = point(hi),
+                  previous = pieces.at(-1);
+                const tail = previous?.at(-1);
+                if (
+                  tail &&
+                  Math.hypot(tail.x - first.x, tail.y - first.y) < 1e-9
+                )
+                  previous.push(last);
+                else pieces.push([first, last]);
+              }
+            }
+            if (!cut) return [stroke];
+            changed = true;
+            return pieces.map((points) => ({ ...stroke, points }));
+          });
+          if (!changed) return;
+          if (!eraserRecorded) {
+            savePaintHistory();
+            eraserRecorded = true;
+          }
+          strokes = next;
+          redrawPaint();
         }
         paintCanvas.addEventListener("pointerdown", (e) => {
           if (!painting || !pdf || pinch || suppressTouch) return;
           e.preventDefault();
           paintCanvas.setPointerCapture(e.pointerId);
+          showBrushCursor(e);
           const p = paintPoint(e);
           if (paintTool === "eraser") {
-            eraseAt(p);
+            erasing = true;
+            eraserRecorded = false;
+            eraserLast = p;
+            eraseBetween(p, p);
             return;
           }
           savePaintHistory();
           activeStroke = {
             page: pageNum,
             color: $("paintColor").value,
-            width: +$("paintWidth").value,
+            width: brushSizes.pen,
             points: [p],
           };
           strokes.push(activeStroke);
@@ -2261,8 +2492,14 @@
         });
         paintCanvas.addEventListener("pointermove", (e) => {
           if (!painting || pinch || suppressTouch) return;
+          showBrushCursor(e);
           if (paintTool === "eraser") {
-            if (e.buttons) eraseAt(paintPoint(e));
+            if (erasing) {
+              e.preventDefault();
+              const p = paintPoint(e);
+              eraseBetween(eraserLast, p);
+              eraserLast = p;
+            }
             return;
           }
           if (!activeStroke) return;
@@ -2271,20 +2508,29 @@
           redrawPaint();
         });
         for (const evt of ["pointerup", "pointercancel", "lostpointercapture"])
-          paintCanvas.addEventListener(evt, () => (activeStroke = null));
+          paintCanvas.addEventListener(evt, (e) => {
+            activeStroke = null;
+            erasing = false;
+            eraserLast = null;
+            eraserRecorded = false;
+            if (e.pointerType !== "mouse" || evt === "pointercancel")
+              hideBrushCursor();
+          });
+        paintCanvas.addEventListener("pointerleave", hideBrushCursor);
         function redrawPaint() {
           if (!paintCanvas || !pdf) return;
           paintCanvas.width = pdfCanvas.width;
           paintCanvas.height = pdfCanvas.height;
           const w = paintCanvas.width,
             h = paintCanvas.height;
+          updateBrushSize();
           paintCtx.lineCap = "round";
           paintCtx.lineJoin = "round";
           for (const stroke of strokes.filter((s) => s.page === pageNum)) {
             if (!stroke.points.length) continue;
             paintCtx.strokeStyle = stroke.color;
             paintCtx.fillStyle = stroke.color;
-            paintCtx.lineWidth = stroke.width * Math.min(w / 612, h / 792);
+            paintCtx.lineWidth = (stroke.width * w) / 612;
             const pts = stroke.points;
             if (pts.length === 1) {
               paintCtx.beginPath();
