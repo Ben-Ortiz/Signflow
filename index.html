@@ -112,7 +112,7 @@
         background: transparent;
         white-space: pre-wrap;
         overflow: hidden;
-        padding: 3px;
+        padding: 0;
         display: flex;
         align-items: flex-start;
         justify-content: flex-start;
@@ -120,6 +120,9 @@
         line-height: 1.2;
       }
       .text-stamp .stamp-text {
+        position: absolute;
+        inset: 0;
+        display: block;
         pointer-events: none;
         overflow-wrap: anywhere;
         width: 100%;
@@ -341,14 +344,13 @@
         cursor: pointer;
         touch-action: none;
         line-height: normal;
-        border: 1.5px solid transparent;
+        border: 0;
         background: transparent;
         user-select: none;
       }
       .stamp.selected {
         z-index: 5;
         cursor: move;
-        border: 1.5px dashed #565af2;
         background: #6366f111;
         outline: 1.5px solid #818cf8;
       }
@@ -994,6 +996,45 @@
           $("mobileStatus").textContent = s;
         };
         const mobile = matchMedia("(max-width: 850px)");
+        let textFont;
+        const textFontReady = PDFLib.PDFDocument.create()
+          .then((doc) => doc.embedFont(PDFLib.StandardFonts.Helvetica))
+          .then((font) => {
+            textFont = font;
+          });
+        function textLayout(rec) {
+          const maxWidth = Math.max(1, rec.w * 612 - 6);
+          const lines = [];
+          for (const paragraph of rec.text.split(/\r?\n/)) {
+            let line = "";
+            for (const word of paragraph.split(/\s+/)) {
+              const candidate = line ? line + " " + word : word;
+              if (
+                line &&
+                textFont.widthOfTextAtSize(candidate, rec.size) > maxWidth
+              ) {
+                lines.push(line);
+                line = "";
+              }
+              for (const char of (line ? " " : "") + word) {
+                if (
+                  line &&
+                  textFont.widthOfTextAtSize(line + char, rec.size) > maxWidth
+                ) {
+                  lines.push(line);
+                  line = "";
+                }
+                line += char;
+              }
+            }
+            lines.push(line);
+          }
+          return {
+            lines,
+            baseline: 3 + textFont.heightAtSize(rec.size, { descender: false }),
+            lineHeight: rec.size * 1.2,
+          };
+        }
         let documentZoom = 1;
         let editHistory = [],
           pendingPlacement = null,
@@ -1244,6 +1285,7 @@
           try {
             bytes = new Uint8Array(await file.arrayBuffer());
             pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+            await textFontReady;
             pages = pdf.numPages;
             pageNum = 1;
             documentZoom = 1;
@@ -1446,6 +1488,12 @@
             message("Type some text or choose today’s date first.");
             return;
           }
+          try {
+            textFont.encodeText(value);
+          } catch (err) {
+            message("Could not add text: " + err.message);
+            return;
+          }
           const size = Number($("textSize").value);
           const naturalWidth = pdfCanvas.width;
           const estimatedWidth = Math.max(
@@ -1552,11 +1600,41 @@
               }
             });
             if (rec.kind === "text") {
-              let t = document.createElement("span");
-              t.className = "stamp-text";
-              t.textContent = rec.text;
-              t.style.fontSize = (rec.size * pdfCanvas.width) / 612 + "px";
-              el.appendChild(t);
+              const ns = "http://www.w3.org/2000/svg";
+              const t = document.createElementNS(ns, "svg");
+              t.setAttribute("width", "100%");
+              t.setAttribute("height", "100%");
+              t.setAttribute("aria-hidden", "true");
+              t.style.display = "block";
+              const aspect =
+                parseFloat(pdfCanvas.style.height) /
+                parseFloat(pdfCanvas.style.width);
+              t.setAttribute(
+                "viewBox",
+                `0 0 ${rec.w * 612} ${rec.h * 612 * aspect}`,
+              );
+              t.setAttribute("preserveAspectRatio", "none");
+              const layout = textLayout(rec);
+              layout.lines.forEach((line, index) => {
+                const text = document.createElementNS(ns, "text");
+                text.setAttribute("x", "3");
+                text.setAttribute(
+                  "y",
+                  layout.baseline + index * layout.lineHeight,
+                );
+                text.setAttribute(
+                  "font-family",
+                  "Arial, Helvetica, sans-serif",
+                );
+                text.setAttribute("font-size", rec.size);
+                text.setAttribute("fill", "#111");
+                text.textContent = line;
+                t.appendChild(text);
+              });
+              const content = document.createElement("span");
+              content.className = "stamp-text";
+              content.appendChild(t);
+              el.appendChild(content);
             } else {
               const img = document.createElement("img");
               img.alt = "Signature";
@@ -1848,17 +1926,44 @@
               const page = doc.getPage(rec.page - 1),
                 { width, height } = page.getSize();
               if (rec.kind === "text") {
-                const fontsize = (rec.size * width) / 612;
-                const y = height - rec.y * height - fontsize * 1.2;
-                page.drawText(rec.text, {
-                  x: rec.x * width + 3,
-                  y,
-                  size: fontsize,
-                  font,
-                  color: PDFLib.rgb(0.07, 0.07, 0.07),
-                  maxWidth: Math.max(5, rec.w * width - 6),
-                  lineHeight: fontsize * 1.2,
+                const sourcePage = await pdf.getPage(rec.page);
+                const viewport = sourcePage.getViewport({ scale: 1 });
+                const scale = viewport.width / 612;
+                const left = rec.x * viewport.width,
+                  top = rec.y * viewport.height;
+                const layout = textLayout(rec);
+                const corners = [
+                  [left, top],
+                  [left + rec.w * viewport.width, top],
+                  [
+                    left + rec.w * viewport.width,
+                    top + rec.h * viewport.height,
+                  ],
+                  [left, top + rec.h * viewport.height],
+                ].map(([x, y]) => viewport.convertToPdfPoint(x, y));
+                page.pushOperators(
+                  PDFLib.pushGraphicsState(),
+                  PDFLib.moveTo(...corners[0]),
+                  ...corners.slice(1).map(([x, y]) => PDFLib.lineTo(x, y)),
+                  PDFLib.closePath(),
+                  PDFLib.clip(),
+                  PDFLib.endPath(),
+                );
+                layout.lines.forEach((line, index) => {
+                  const [x, y] = viewport.convertToPdfPoint(
+                    left + 3 * scale,
+                    top + (layout.baseline + index * layout.lineHeight) * scale,
+                  );
+                  page.drawText(line, {
+                    x,
+                    y,
+                    size: rec.size * scale,
+                    font,
+                    rotate: PDFLib.degrees(viewport.rotation),
+                    color: PDFLib.rgb(0.067, 0.067, 0.067),
+                  });
                 });
+                page.pushOperators(PDFLib.popGraphicsState());
               } else {
                 const img = await doc.embedPng(rec.url);
                 page.drawImage(img, {
