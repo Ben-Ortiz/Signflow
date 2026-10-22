@@ -781,7 +781,7 @@
       <button
         class="btn"
         id="mobileDraw"
-        aria-label="Enable freehand drawing"
+        aria-label="Open drawing controls"
         aria-pressed="false"
         aria-expanded="false"
         aria-controls="editorTools"
@@ -1167,6 +1167,7 @@
         }
         function openTool(tool) {
           if (painting && tool !== "draw") setPainting(false);
+          if (tool === "draw") $("paintControls").classList.remove("hidden");
           if (tool === "text" && !editingTextId)
             $("addText").textContent = "Place text";
           if (tool === "date" && !editingTextId)
@@ -1214,15 +1215,7 @@
           openTool("text");
         };
         $("mobileMore").onclick = () => openTool("more");
-        $("mobileDraw").onclick = () => {
-          if (painting) openTool("draw");
-          else {
-            setPainting(true);
-            message(
-              "Draw on the PDF. Tap Draw again for eraser, undo, or stop.",
-            );
-          }
-        };
+        $("mobileDraw").onclick = () => openTool("draw");
         $("closeSheet").onclick = $("sheetBackdrop").onclick = closeSheet;
         document.addEventListener("keydown", (e) => {
           if (!mobile.matches || !$("app").classList.contains("panel-open"))
@@ -2131,15 +2124,12 @@
             : "✎ Enable freehand drawing";
           $("paintToggle").classList.toggle("active", on);
           $("mobileDraw").setAttribute("aria-pressed", String(on));
-          $("mobileDraw").setAttribute(
-            "aria-label",
-            on ? "Open drawing controls" : "Enable freehand drawing",
-          );
           if (!on) activeStroke = null;
           redrawPaint();
         }
         $("paintToggle").onclick = () => {
           setPainting(!painting);
+          if (mobile.matches) $("paintControls").classList.remove("hidden");
           if (painting && mobile.matches) {
             message(
               "Draw on the PDF. Tap Draw again for eraser, undo, or stop.",
