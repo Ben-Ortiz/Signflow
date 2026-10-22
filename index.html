@@ -911,8 +911,10 @@
         </div>
         <div class="tip">
           Add a signature or regular text, then drag it into position. Use the
-          corner handle to resize signatures. Choose Done to hide the controls.
-          Tap a signature or text to adjust it again. Repeat on any page.
+          corner handle to resize signatures. Items follow page changes until
+          you choose Done to keep them on the current page and hide the
+          controls. Tap a signature or text to adjust it again. Repeat on any
+          page.
         </div>
         <div class="foot">
           Your PDF is processed locally in your browser. No document is sent to
@@ -1337,8 +1339,16 @@
           const target = pageNum + offset;
           if (!pdf || navigating || target < 1 || target > pages) return;
           const previous = pageNum;
+          const drafts = placements.filter((rec) => rec.confirmed === false);
+          const previousPages = drafts.map((rec) => rec.page);
           navigating = true;
-          selected = pendingPlacement = editingTextId = null;
+          if (drafts.length) {
+            recordEdit();
+            drafts.forEach((rec) => {
+              rec.page = target;
+            });
+          }
+          editingTextId = null;
           activeStroke = null;
           closeSheet();
           wrap.inert = true;
@@ -1364,10 +1374,16 @@
           try {
             await render();
             message(
-              `Page ${target} of ${pages}. Your edits stay on the page where you placed them.`,
+              drafts.length
+                ? `Page ${target} of ${pages}. Unconfirmed items follow you. Tap Done to keep each item on this page.`
+                : `Page ${target} of ${pages}. Confirmed items stay on their original pages.`,
             );
           } catch (err) {
             pageNum = previous;
+            drafts.forEach((rec, index) => {
+              rec.page = previousPages[index];
+            });
+            if (drafts.length) editHistory.pop();
             try {
               await render();
             } catch {
@@ -1396,6 +1412,7 @@
             const url = signatureImage();
             let rec = {
               id: Date.now() + Math.random(),
+              confirmed: false,
               page: pageNum,
               x: 0.28,
               y: 0.35,
@@ -1441,6 +1458,7 @@
           const existing = placements.find((r) => r.id === editingTextId);
           const rec = {
             id: existing?.id ?? Date.now() + Math.random(),
+            confirmed: false,
             kind: "text",
             page: pageNum,
             x: existing?.x ?? 0.2,
@@ -1522,6 +1540,7 @@
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 selected = rec.id;
+                rec.confirmed = false;
                 drawStamps();
                 wrap
                   .querySelector(
@@ -1600,6 +1619,7 @@
               e.preventDefault();
               const isResize = e.target.classList.contains("resize");
               selected = rec.id;
+              rec.confirmed = false;
               pendingPlacement = null;
               el.classList.add("selected");
               for (const other of wrap.querySelectorAll(".stamp"))
@@ -1645,10 +1665,12 @@
           }
         }
         function confirmPosition() {
+          const rec = placements.find((item) => item.id === selected);
+          if (rec) rec.confirmed = true;
           selected = pendingPlacement = null;
           drawStamps();
           message(
-            "Position confirmed. Tap a signature or text to edit it again.",
+            `Position confirmed on page ${pageNum}. Tap the item to edit it again.`,
           );
         }
         const paintCanvas = $("paintCanvas"),
