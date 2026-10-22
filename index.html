@@ -555,6 +555,7 @@
           height: 100%;
         }
         .mobile-nav button[aria-expanded="true"],
+        .mobile-nav button[aria-pressed="true"],
         .mobile-nav #mobileSave {
           background: #6366f1;
           border-color: #7779ff;
@@ -596,6 +597,7 @@
         #app[data-tool="sign"] [data-panel="sign"],
         #app[data-tool="date"] [data-panel="date"],
         #app[data-tool="text"] [data-panel="text"],
+        #app[data-tool="draw"] [data-panel="draw"],
         #app[data-tool="more"] [data-panel="more"] {
           display: block;
         }
@@ -708,7 +710,7 @@
         <button
           class="btn"
           id="mobileMore"
-          aria-label="Open document and drawing tools"
+          aria-label="Open document tools"
           aria-expanded="false"
         >
           •••
@@ -775,6 +777,29 @@
           >
             <path d="M4 6V4h16v2M12 4v16m-4 0h8" /></svg></span
         >Text
+      </button>
+      <button
+        class="btn"
+        id="mobileDraw"
+        aria-label="Enable freehand drawing"
+        aria-pressed="false"
+        aria-expanded="false"
+        aria-controls="editorTools"
+        disabled
+      >
+        <span class="tool-icon" aria-hidden="true"
+          ><svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="m14 5 5 5M11 16 21 6a2 2 0 0 0-3-3L8 13M11 16c0 4-4 5-8 5 2-2 0-5 3-7 2-1 4 0 5 2Z"
+            /></svg></span
+        >Draw
       </button>
       <button
         class="btn primary"
@@ -920,7 +945,7 @@
             Place text
           </button>
         </div>
-        <div data-panel="more">
+        <div data-panel="draw">
           <h2>Draw directly on the PDF</h2>
           <button class="btn wide" id="paintToggle" disabled>
             ✎ Enable freehand drawing
@@ -1132,6 +1157,7 @@
             "mobileSign",
             "mobileDate",
             "mobileText",
+            "mobileDraw",
             "mobileMore",
           ])
             $(id).setAttribute("aria-expanded", "false");
@@ -1140,7 +1166,7 @@
           sheetOpener = null;
         }
         function openTool(tool) {
-          if (painting) setPainting(false);
+          if (painting && tool !== "draw") setPainting(false);
           if (tool === "text" && !editingTextId)
             $("addText").textContent = "Place text";
           if (tool === "date" && !editingTextId)
@@ -1161,7 +1187,8 @@
             sign: "Create your signature",
             date: "Choose a date",
             text: "Add text",
-            more: "Document & drawing",
+            draw: "Freehand drawing",
+            more: "Document tools",
           }[tool];
           $("app").classList.add("panel-open");
           $("sheetBackdrop").classList.remove("hidden");
@@ -1175,6 +1202,7 @@
             sign: "mobileSign",
             date: "mobileDate",
             text: "mobileText",
+            draw: "mobileDraw",
             more: "mobileMore",
           }[tool];
           $(trigger).setAttribute("aria-expanded", "true");
@@ -1186,6 +1214,15 @@
           openTool("text");
         };
         $("mobileMore").onclick = () => openTool("more");
+        $("mobileDraw").onclick = () => {
+          if (painting) openTool("draw");
+          else {
+            setPainting(true);
+            message(
+              "Draw on the PDF. Tap Draw again for eraser, undo, or stop.",
+            );
+          }
+        };
         $("closeSheet").onclick = $("sheetBackdrop").onclick = closeSheet;
         document.addEventListener("keydown", (e) => {
           if (!mobile.matches || !$("app").classList.contains("panel-open"))
@@ -1541,7 +1578,12 @@
             editHistory = [];
             selected = pendingPlacement = editingTextId = null;
             updateUndo();
-            for (const id of ["mobileSign", "mobileDate", "mobileText"])
+            for (const id of [
+              "mobileSign",
+              "mobileDate",
+              "mobileText",
+              "mobileDraw",
+            ])
               $(id).disabled = false;
             $("mobileFilename").textContent = file.name;
             setPainting(false);
@@ -1571,6 +1613,7 @@
               "mobileSign",
               "mobileDate",
               "mobileText",
+              "mobileDraw",
               "download",
               "add",
               "addText",
@@ -1658,6 +1701,7 @@
             "mobileSign",
             "mobileDate",
             "mobileText",
+            "mobileDraw",
             "paintToggle",
             "pdfFile",
           ];
@@ -2086,6 +2130,11 @@
             ? "✓ Drawing enabled — click to stop"
             : "✎ Enable freehand drawing";
           $("paintToggle").classList.toggle("active", on);
+          $("mobileDraw").setAttribute("aria-pressed", String(on));
+          $("mobileDraw").setAttribute(
+            "aria-label",
+            on ? "Open drawing controls" : "Enable freehand drawing",
+          );
           if (!on) activeStroke = null;
           redrawPaint();
         }
@@ -2093,7 +2142,7 @@
           setPainting(!painting);
           if (painting && mobile.matches) {
             message(
-              "Draw on the page. Open ••• to stop drawing. Undo restores your last edit.",
+              "Draw on the PDF. Tap Draw again for eraser, undo, or stop.",
             );
             showView(true);
           }
