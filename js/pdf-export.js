@@ -5,11 +5,6 @@ window.SignFlowExport = async function ({ bytes, placements, strokes }) {
   const loadingTask = pdfjsLib.getDocument({ data: bytes.slice() });
   try {
     const pdf = await loadingTask.promise;
-    const layoutDocument = await PDFLib.PDFDocument.create();
-    const textFont = await layoutDocument.embedFont(
-      PDFLib.StandardFonts.Helvetica,
-    );
-    const textLayout = (rec) => SignFlowCore.textLayout(rec, textFont);
     function hexRgb(hex) {
       return PDFLib.rgb(
         parseInt(hex.slice(1, 3), 16) / 255,
@@ -21,6 +16,7 @@ window.SignFlowExport = async function ({ bytes, placements, strokes }) {
       ignoreEncryption: false,
     });
     const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+    const textLayout = (rec) => SignFlowCore.textLayout(rec, font);
     for (const rec of placements) {
       const page = doc.getPage(rec.page - 1),
         { width, height } = page.getSize();
@@ -98,6 +94,11 @@ window.SignFlowExport = async function ({ bytes, placements, strokes }) {
     }
     return await doc.save();
   } finally {
-    await loadingTask.destroy();
+    // Resource cleanup must not turn a successful export into a failed download.
+    await loadingTask
+      .destroy()
+      .catch((error) =>
+        console.error("Could not release the export PDF.", error),
+      );
   }
 };

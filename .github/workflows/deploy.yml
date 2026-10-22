@@ -27,18 +27,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Check JavaScript and core regressions
+          cache: npm
+      - name: Install development tools
+        run: npm ci
+      - name: Check code quality and regressions
+        run: npm run check
+      - name: Stage public site files
         run: |
-          node --check js/app.js
-          node --check js/core.js
-          node --check js/pdf-export.js
-          node --test tests/*.test.cjs
+          mkdir -p _site
+          cp index.html styles.css .nojekyll _site/
+          cp -R js _site/
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

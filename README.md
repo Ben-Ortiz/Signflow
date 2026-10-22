@@ -85,14 +85,19 @@ cannot change an in-progress download. Destroy PDF.js resources when finished.
 
 ### Checks
 
-Run the dependency-free checks with Node.js 22 or newer:
+Use Node.js 22.13 or newer to install development tools and run all checks:
 
 ```bash
-node --check js/app.js
-node --check js/core.js
-node --check js/pdf-export.js
-node --test tests/*.test.cjs
+npm ci
+npm run check
 ```
+
+`npm run check` runs ESLint, checks formatting with Prettier, and runs the core
+regression tests. Use `npm run format` to apply formatting, or `npm test` to run
+the dependency-free core tests alone. The lockfile pins development dependencies;
+commit it when updating tools. These tools are not required to open or use the app.
+Checks run on pull requests and before deployment. Deployment includes only the
+public HTML, CSS, and JavaScript files.
 
 For browser regressions, install Python Playwright (`python -m pip install
 playwright`, then `python -m playwright install chromium`), start the local server,
@@ -106,6 +111,6 @@ python tests/drawing.py
 `SIGNFLOW_URL` overrides the local URL; `CHROMIUM_PATH` selects an installed Chromium.
 The tests keep certificate verification enabled. They cover mobile and desktop
 navigation, draft confirmation, failed and overlapping uploads, export isolation,
-reopening PDFs, partial erasing, brush sizes, and Undo. Test documents contain no
+reopening PDFs, zoom failures, cleanup failures, partial erasing, brush sizes, and Undo. Test documents contain no
 personal information. Check touch gestures on an actual iPhone before changing
 Safari-specific event handling.

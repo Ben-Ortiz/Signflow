@@ -387,9 +387,15 @@
       window.scrollBy(0, rect.top + anchor.v * rect.height - anchor.y);
     }
   }
-  $("zoomIn").onclick = () => setDocumentZoom(documentZoom + 0.5);
-  $("zoomOut").onclick = () => setDocumentZoom(documentZoom - 0.5);
-  $("zoomFit").onclick = () => setDocumentZoom(1);
+  // DOM event dispatch does not await promises; handle zoom failures explicitly.
+  function zoomTo(value) {
+    setDocumentZoom(value).catch((error) =>
+      message("Could not zoom PDF: " + error.message),
+    );
+  }
+  $("zoomIn").onclick = () => zoomTo(documentZoom + 0.5);
+  $("zoomOut").onclick = () => zoomTo(documentZoom - 0.5);
+  $("zoomFit").onclick = () => zoomTo(1);
   function showView(preview, refresh = true) {
     if (!preview) return;
     closeSheet();
@@ -432,7 +438,7 @@
   let drawing = false,
     last = null;
   function pt(e) {
-    let r = pad.getBoundingClientRect();
+    const r = pad.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
   pad.addEventListener("pointerdown", (e) => {
@@ -472,20 +478,20 @@
     const out = document.createElement("canvas");
     out.width = 1100;
     out.height = 300;
-    let c = out.getContext("2d");
+    const c = out.getContext("2d");
     if (signatureMode === "type") {
-      let str = $("typed").value.trim();
+      const str = $("typed").value.trim();
       if (!str) throw Error("Type your name first.");
       c.fillStyle = "#111";
       c.textAlign = "center";
       c.textBaseline = "middle";
-      let size = Math.min(105, Math.floor(990 / (str.length * 0.58)));
+      const size = Math.min(105, Math.floor(990 / (str.length * 0.58)));
       c.font = `italic ${Math.max(22, size)}px "Brush Script MT", "Segoe Script", cursive`;
       c.fillText(str, 550, 150, 1050);
     } else {
-      let pixels = ctx.getImageData(0, 0, pad.width, pad.height),
-        p = pixels.data,
-        minX = pad.width,
+      const pixels = ctx.getImageData(0, 0, pad.width, pad.height);
+      const p = pixels.data;
+      let minX = pad.width,
         minY = pad.height,
         maxX = -1,
         maxY = -1;
@@ -499,9 +505,9 @@
           }
         }
       if (maxX < 0) throw Error("Draw your signature first.");
-      let w = maxX - minX + 1,
+      const w = maxX - minX + 1,
         h = maxY - minY + 1;
-      let ratio = Math.min(1000 / w, 250 / h);
+      const ratio = Math.min(1000 / w, 250 / h);
       c.drawImage(
         pad,
         minX,
@@ -522,13 +528,13 @@
     const file = e.target.files[0];
     if (!file) return;
     const revision = ++loadRevision;
-    let candidate = null,
-      loadingTask = null;
+    let loadingTask = null;
     message("Opening PDF…");
     try {
       const nextBytes = new Uint8Array(await file.arrayBuffer());
+      if (revision !== loadRevision) return;
       loadingTask = pdfjsLib.getDocument({ data: nextBytes.slice() });
-      candidate = await loadingTask.promise;
+      const candidate = await loadingTask.promise;
       await textFontReady;
       if (fontError) throw fontError;
       // Render offscreen first: corrupt page data must not replace current edits.
@@ -543,7 +549,6 @@
       if (revision !== loadRevision) return;
       const previous = pdf;
       pdf = candidate;
-      candidate = null;
       loadingTask = null;
       bytes = nextBytes;
       if (previous) previous.destroy().catch(console.error);
@@ -591,7 +596,12 @@
             (pdf ? ". Your current document is still open." : ""),
         );
     } finally {
-      if (loadingTask) await loadingTask.destroy();
+      if (loadingTask)
+        await loadingTask
+          .destroy()
+          .catch((error) =>
+            console.error("Could not release the unused PDF.", error),
+          );
       // Allow choosing the same file again after an error.
       if (revision === loadRevision) $("pdfFile").value = "";
     }
@@ -613,17 +623,17 @@
     if (current !== pageNum || document !== pdf) return;
     const natural = page.getViewport({ scale: 1 });
     const workspaceStyle = getComputedStyle($("workspace"));
-    let available = Math.max(
+    const available = Math.max(
       1,
       $("workspace").clientWidth -
         parseFloat(workspaceStyle.paddingLeft) -
         parseFloat(workspaceStyle.paddingRight),
     );
-    let scale =
+    const scale =
       (mobile.matches
         ? available / natural.width
         : Math.min(1.6, available / natural.width)) * documentZoom;
-    let viewport = page.getViewport({ scale });
+    const viewport = page.getViewport({ scale });
     pdfCanvas.width = Math.floor(viewport.width);
     pdfCanvas.height = Math.floor(viewport.height);
     pdfCanvas.style.width = viewport.width + "px";
@@ -723,7 +733,7 @@
     if (!pdf) return;
     try {
       const url = signatureImage();
-      let rec = {
+      const rec = {
         id: Date.now() + Math.random(),
         confirmed: false,
         page: pageNum,
@@ -1020,7 +1030,7 @@
         for (const other of wrap.querySelectorAll(".stamp"))
           if (other !== el) other.classList.remove("selected");
         el.setPointerCapture(e.pointerId);
-        let startX = e.clientX,
+        const startX = e.clientX,
           startY = e.clientY,
           ox = rec.x,
           oy = rec.y,
@@ -1033,7 +1043,7 @@
             recordEdit();
             recordedMove = true;
           }
-          let dx = (ev.clientX - startX) / wrap.clientWidth,
+          const dx = (ev.clientX - startX) / wrap.clientWidth,
             dy = (ev.clientY - startY) / wrap.clientHeight;
           if (isResize) {
             rec.w = Math.max(0.04, Math.min(1 - rec.x, ow + dx));
@@ -1341,7 +1351,12 @@
       $("download").disabled = !pdf;
     }
   };
+  // A resize burst needs one final render rather than a growing render queue.
+  let resizeTimer;
   window.addEventListener("resize", () => {
-    if (pdf) render();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (pdf) render();
+    }, 150);
   });
 })();

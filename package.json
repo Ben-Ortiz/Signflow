@@ -1,0 +1,22 @@
+{
+  "name": "signflow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static, browser-based PDF signing and editing.",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "lint": "eslint js tests/*.cjs eslint.config.cjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test tests/*.test.cjs",
+    "check": "npm run lint && npm run format:check && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "prettier": "3.6.2"
+  }
+}

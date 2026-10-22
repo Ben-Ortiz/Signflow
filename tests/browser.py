@@ -87,6 +87,7 @@ with sync_playwright() as playwright:
             const original = SignFlowExport;
             window.SignFlowExport = async snapshot => {
                 await new Promise(resolve => window.resumeExport = resolve);
+                window.SignFlowExport = original;
                 return original(snapshot);
             };
         }""")
@@ -138,6 +139,83 @@ with sync_playwright() as playwright:
         assert page.locator("#filename").text_content() == "newest.pdf"
         assert not errors, errors
         print(f"{width}px: overlapping uploads retain the newest selection")
+        # Inject a real PDF.js rendering failure to exercise the DOM zoom handler.
+        page.evaluate(
+            """async data => {
+            const task = pdfjsLib.getDocument({data: new Uint8Array(data)});
+            const doc = await task.promise;
+            const prototype = Object.getPrototypeOf(await doc.getPage(1));
+            const original = prototype.render;
+            window.restoreRender = () => { prototype.render = original; };
+            prototype.render = function () { throw new Error('Injected render failure'); };
+            await task.destroy();
+        }""",
+            list(source),
+        )
+        # Desktop hides these controls; dispatch the same DOM handler directly.
+        page.locator("#zoomIn").evaluate("button => button.click()")
+        page.wait_for_function(
+            "document.querySelector('#status').textContent.startsWith('Could not zoom PDF:')"
+        )
+        page.evaluate("restoreRender()")
+        page.locator("#zoomFit").evaluate("button => button.click()")
+        page.wait_for_function(
+            "document.querySelector('#zoomLabel').textContent === '100%'"
+        )
+        # Allow promise rejection events to surface before checking for errors.
+        page.wait_for_timeout(200)
+        assert not errors, errors
+        print(f"{width}px: zoom errors are handled and a later render succeeds")
+        # A cleanup rejection must not discard a successfully generated PDF.
+        if width < 850:
+            page.locator("#mobileDate").click()
+        page.locator("#today").click()
+        page.locator("#addDate").click()
+        page.evaluate(
+            """async data => {
+            const task = pdfjsLib.getDocument({data: new Uint8Array(data)});
+            await task.promise;
+            const prototype = Object.getPrototypeOf(task);
+            const original = prototype.destroy;
+            await task.destroy();
+            window.restoreDestroy = () => { prototype.destroy = original; };
+            prototype.destroy = async function () {
+                await original.call(this);
+                throw new Error('Injected cleanup rejection');
+            };
+        }""",
+            list(source),
+        )
+        with page.expect_download() as saved:
+            page.locator("#mobileSave" if width < 850 else "#download").click()
+        assert saved.value.failure() is None
+        page.evaluate("restoreDestroy()")
+        assert not errors, errors
+        print(f"{width}px: cleanup rejection preserves the successful download")
+        # Resize storms should produce one settled render, not one per event.
+        page.evaluate(
+            """async data => {
+            const task = pdfjsLib.getDocument({data: new Uint8Array(data)});
+            const doc = await task.promise;
+            const prototype = Object.getPrototypeOf(await doc.getPage(1));
+            const original = prototype.render;
+            await task.destroy();
+            window.resizeRenders = 0;
+            window.restoreRender = () => { prototype.render = original; };
+            prototype.render = function (...args) {
+                window.resizeRenders++;
+                return original.apply(this, args);
+            };
+            for (let i = 0; i < 20; i++) window.dispatchEvent(new Event('resize'));
+        }""",
+            list(source),
+        )
+        page.wait_for_function("resizeRenders > 0")
+        page.wait_for_timeout(500)
+        assert page.evaluate("resizeRenders") == 1
+        page.evaluate("restoreRender()")
+        assert not errors, errors
+        print(f"{width}px: a resize burst produces one render")
         page.close()
     page = browser.new_page()
     errors = []
