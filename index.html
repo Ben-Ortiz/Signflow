@@ -408,6 +408,9 @@
       .mobile-nav {
         display: none;
       }
+      .document-zoom {
+        display: none;
+      }
       @media (max-width: 850px) {
         html {
           scroll-padding-top: 76px;
@@ -455,7 +458,7 @@
             max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
         }
         main {
-          padding: 16px 12px max(24px, env(safe-area-inset-bottom));
+          padding: 8px 4px max(24px, env(safe-area-inset-bottom));
         }
         input, select, #typed, .text-entry {
           font-size: 16px;
@@ -464,18 +467,42 @@
           min-height: 44px;
         }
         .toolbar {
-          margin-bottom: 12px;
+          margin: 0 8px 8px;
+          gap: 8px;
+        }
+        .toolbar > div:first-child {
+          display: none;
+        }
+        .document-zoom {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+        }
+        .document-zoom button {
+          min-width: 44px;
+          padding: 6px 10px;
+        }
+        #zoomLabel {
+          min-width: 46px;
+          text-align: center;
         }
         .pages {
           width: 100%;
           justify-content: space-between;
         }
         .workspace {
-          padding: 12px;
+          padding: 4px;
+          border-radius: 8px;
+          justify-content: flex-start;
           min-height: calc(100dvh - 200px);
         }
         .pageWrap {
-          touch-action: pan-y pinch-zoom;
+          max-width: none;
+          flex-shrink: 0;
+          margin-inline: auto;
+          touch-action: pan-x pan-y pinch-zoom;
         }
         .pageWrap.painting {
           touch-action: none;
@@ -647,6 +674,12 @@
             ><span id="pageLabel" class="subtle">Page 0 of 0</span
             ><button id="next" aria-label="Next page" disabled>→</button>
           </div>
+          <div class="document-zoom" aria-label="Document zoom">
+            <button class="btn" id="zoomOut" aria-label="Zoom out" disabled>−</button>
+            <span class="subtle" id="zoomLabel" aria-live="polite">100%</span>
+            <button class="btn" id="zoomIn" aria-label="Zoom in" disabled>+</button>
+            <button class="btn" id="zoomFit" disabled>Fit width</button>
+          </div>
         </div>
         <div class="workspace" id="workspace">
           <div class="empty" id="empty">
@@ -692,11 +725,25 @@
           $("mobileStatus").textContent = s;
         };
         const mobile = matchMedia("(max-width: 850px)");
+        let documentZoom = 1;
+        function setDocumentZoom(value) {
+          documentZoom = Math.max(1, Math.min(3, value));
+          $("zoomLabel").textContent = Math.round(documentZoom * 100) + "%";
+          $("zoomOut").disabled = !pdf || documentZoom <= 1;
+          $("zoomIn").disabled = !pdf || documentZoom >= 3;
+          $("zoomFit").disabled = !pdf;
+          $("workspace").scrollLeft = 0;
+          render();
+        }
+        $("zoomIn").onclick = () => setDocumentZoom(documentZoom + 0.5);
+        $("zoomOut").onclick = () => setDocumentZoom(documentZoom - 0.5);
+        $("zoomFit").onclick = () => setDocumentZoom(1);
         function showView(preview, refresh = true) {
           $("app").classList.toggle("show-preview", preview);
           $("mobileTools").setAttribute("aria-pressed", String(!preview));
           $("mobilePreview").setAttribute("aria-pressed", String(preview));
           if (mobile.matches) {
+            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
             window.scrollTo(0, 0);
             if (preview && refresh) render();
           }
@@ -825,6 +872,13 @@
             pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
             pages = pdf.numPages;
             pageNum = 1;
+            documentZoom = 1;
+            $("zoomLabel").textContent = "100%";
+            $("zoomOut").disabled = true;
+            $("zoomIn").disabled = false;
+            $("zoomFit").disabled = false;
+            $("workspace").scrollLeft = 0;
+            $("workspace").scrollTop = 0;
             placements = [];
             strokes = [];
             paintHistory = [];
@@ -838,10 +892,15 @@
             $("download").disabled = false;
             if (mobile.matches) showView(true, false);
             await render();
-            message("PDF loaded. Create a signature to place it.");
+            message(mobile.matches
+              ? "PDF loaded. Use + to zoom or Tools to sign."
+              : "PDF loaded. Create a signature to place it.");
           } catch (err) {
             pdf = null;
             bytes = null;
+            $("zoomOut").disabled = true;
+            $("zoomIn").disabled = true;
+            $("zoomFit").disabled = true;
             message("Could not open PDF: " + err.message);
             $("filename").textContent = "No usable PDF selected";
           }
@@ -860,7 +919,9 @@
           const workspaceStyle = getComputedStyle($("workspace"));
           let available = Math.max(1, $("workspace").clientWidth -
             parseFloat(workspaceStyle.paddingLeft) - parseFloat(workspaceStyle.paddingRight));
-          let scale = Math.min(1.6, available / natural.width);
+          let scale = mobile.matches
+            ? (available / natural.width) * documentZoom
+            : Math.min(1.6, available / natural.width);
           let viewport = page.getViewport({ scale });
           pdfCanvas.width = Math.floor(viewport.width);
           pdfCanvas.height = Math.floor(viewport.height);
