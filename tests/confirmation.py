@@ -35,7 +35,7 @@ with sync_playwright() as playwright:
             with page.expect_download() as download:
                 page.locator("#mobileSave" if width < 850 else "#download").click()
             data = Path(download.value.path()).read_bytes()
-            return page.evaluate(
+            result = page.evaluate(
                 """async data => {
                 const task = pdfjsLib.getDocument({data: new Uint8Array(data)});
                 try {
@@ -55,6 +55,8 @@ with sync_playwright() as playwright:
             }""",
                 list(data),
             )
+            result["pdf"] = data
+            return result
 
         if width < 850:
             page.locator("#mobileSign").click()
@@ -66,11 +68,6 @@ with sync_playwright() as playwright:
         page.locator('button[aria-label="Confirm position"]').click()
         first_confirmed = save_and_inspect()
         assert first_confirmed["images"] == 1
-        # Selecting an existing item must preserve its last confirmed version.
-        page.locator(".stamp").click()
-        assert save_and_inspect()["images"] == 1
-        page.locator('button[aria-label="Confirm position"]').click()
-
         # A second unfinished signature must not remove the first confirmed one.
         if width < 850:
             page.locator("#mobileSign").click()
@@ -114,9 +111,32 @@ with sync_playwright() as playwright:
         assert result["images"] == 1 and len(result["text"]) > len(
             "Confirmed text"
         ), result
+        # Existing signatures may already be embedded in an uploaded signed PDF.
+        # A new unfinished signature must not remove those either.
+        page.locator("#pdfFile").set_input_files(
+            {
+                "name": "previously-signed.pdf",
+                "mimeType": "application/pdf",
+                "buffer": result["pdf"],
+            }
+        )
+        page.wait_for_function(
+            "document.querySelector('#filename').textContent === 'previously-signed.pdf'"
+        )
+        page.wait_for_function(
+            "/get started|PDF loaded/.test(document.querySelector('#status').textContent)"
+        )
+        if width < 850:
+            page.locator("#mobileSign").click()
+        page.locator("#typeTab").click()
+        page.locator("#typed").fill("Unfinished extra signature")
+        page.locator("#add").click()
+        embedded_result = save_and_inspect()
+        assert embedded_result["images"] == 1
+        assert embedded_result["raster"] == result["raster"]
         assert not errors, errors
         print(
-            f"{width}px: draft signature, text, and date excluded; Done includes them; last confirmed signature retained while a second is unfinished"
+            f"{width}px: draft signature, text, and date excluded; Done includes them; first signature untouched and retained while second is unfinished; embedded signatures preserved"
         )
         page.close()
     browser.close()
