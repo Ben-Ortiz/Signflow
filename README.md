@@ -1,109 +1,136 @@
-# [SignFlow — PDF Signer & Editor](https://ben-ortiz.github.io/Signflow/)
+# SignFlow
 
-I got sick of trying to sign PDFs and not having a simple way to sign them for free.  
-So I made my own.
+**A free, browser-based PDF signer and annotation editor built for phones and desktops.**
 
-A free, browser-based mobile-friendly, PDF editor built with HTML, CSS, and vanilla JavaScript using ChatGPT Codex.
+I built SignFlow because signing a PDF should be straightforward: open a document,
+add what you need, and download the result. No account, subscription, or installation
+required. PDF processing happens locally in the browser.
 
-No installation, account, or backend required.
+**[Try the live app →](https://ben-ortiz.github.io/Signflow/)**
 
-## Features
+[![Deploy SignFlow](https://github.com/Ben-Ortiz/Signflow/actions/workflows/deploy.yml/badge.svg)](https://github.com/Ben-Ortiz/Signflow/actions/workflows/deploy.yml)
 
-- Upload and preview multipage PDFs.
-- Draw or type signatures. Finish each signature with Done or delete it before adding another.
-- Add text and dates. Finish or delete the current item before starting another.
-- Draw freely with a pen or eraser. Press Done to keep a session, or Delete drawing to discard it; earlier confirmed drawings are preserved.
-- Move and resize elements.
-- Download edited PDFs. Press Done on each signature, text item, date, or drawing session to include it; unfinished new items stay in the editor, and existing items keep their last confirmed version until you press Done again.
-- Process PDFs locally without uploading them to a server.
+## What you can do
 
-## Getting Started
+- **Sign documents:** draw a signature or type your name, then move and resize it.
+- **Add text and dates:** enter text, choose a date format, and position each item.
+- **Draw and erase:** annotate with adjustable pen and eraser sizes, a live size
+  indicator, and an eraser that removes only the touched portion of a stroke.
+- **Navigate multipage PDFs:** confirm items on their intended pages and continue
+  working through the document.
+- **Work on mobile:** use a document-first layout, bottom tool navigation, and
+  two-finger document zoom. Desktop retains its side-by-side tools and preview.
+- **Undo changes and export:** recover edits, download an annotated PDF, and reopen
+  it in a PDF viewer or in SignFlow.
 
-### Option 1: Open Directly (Easiest)
+## How to use it
 
-1. Click **Code → Download ZIP** on this repository.
-2. Extract the ZIP file.
-3. Double-click `index.html` to open the app in your browser.
+1. **Open a PDF** using Upload PDF or Open a PDF.
+2. **Choose a tool:** Sign, Date, Text, or Draw. On mobile, tools open in a panel
+   while the document remains the main workspace.
+3. **Place and confirm your item.** Move or resize it, then press **Done**. Finish
+   or delete the unfinished item before adding another. Tap a placed item to edit
+   it again.
+4. **For drawing, choose settings first.** On mobile, tap Draw again or Close to
+   start drawing. Make as many strokes as needed in that session, then choose
+   **Done** to keep them or **Delete drawing** to discard the session.
+5. **Save your PDF.** Download includes confirmed work. New unfinished items are
+   left out; edits to an existing item keep its last confirmed version until you
+   press Done again. Earlier confirmed drawings are preserved when a new drawing
+   session is discarded.
 
-### Option 2: Run Locally with Python
+For signatures, text, and dates, unconfirmed items follow page changes until you
+press Done to keep them on a specific page. Save your work before closing or
+refreshing the app; documents and edits are held in memory.
 
-**1. Clone the repository:**
+## How it was made
+
+SignFlow was developed through an iterative, AI-assisted workflow using **ChatGPT
+Codex**. The project started with a personal need for a simple PDF signing tool,
+then evolved through hands-on testing, feedback, bug fixes, and refactoring.
+
+Product decisions focused on reducing friction: keeping the document visible on a
+phone, making placement controls disappear after confirmation, distinguishing
+unfinished edits from saved work, and preserving the desktop workflow. Engineering
+work addressed issues that surfaced during those iterations, including date export
+alignment, page transitions, partial erasing, overlapping uploads, and exporting
+while the editor changes.
+
+The implementation uses **HTML, CSS, and vanilla JavaScript**. The application is
+split into focused files, with no framework, backend, or application build step.
+Development tools provide linting, formatting, and regression checks without being
+required to use the app.
+
+## Engineering highlights
+
+| Challenge                                                | Implementation                                                                                                                                                                       |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Keep placement consistent across screen sizes and export | Store positions as fractions of the displayed page and share text layout between preview and export. Font and brush sizes use a canonical page width of 612 points.                  |
+| Preserve work when a replacement upload fails            | Validate and render a candidate PDF before replacing the current document. A revision counter prevents an older upload from overwriting a newer selection.                           |
+| Save reliably while the user continues working           | Export from copied PDF bytes and an annotation snapshot using a separate PDF.js document. Later edits cannot change that in-progress download.                                       |
+| Separate drafts from confirmed work                      | Retain each item's last confirmed version and require Done or deletion before starting another item. Drawing sessions keep a baseline that supports confirmation, discard, and Undo. |
+| Erase precisely, including fast pointer movements        | Split vector strokes using swept-circle geometry, preserving untouched sections and grouping each erasing gesture into one Undo action.                                              |
+| Keep interaction responsive                              | Debounce resize rendering and handle asynchronous rendering and resource-cleanup failures explicitly.                                                                                |
+
+These decisions are supported by [core tests](tests/core.test.cjs) and
+[browser regression tests](tests/), rather than relying only on visual inspection.
+
+## Architecture and stack
+
+| Component                            | Responsibility                                                         |
+| ------------------------------------ | ---------------------------------------------------------------------- |
+| [index.html](index.html)             | Interface markup, labeled controls, and script loading                 |
+| [styles.css](styles.css)             | Responsive layouts, tool panels, and annotation controls               |
+| [js/app.js](js/app.js)               | Editor state, input events, page navigation, gestures, and rendering   |
+| [js/core.js](js/core.js)             | DOM-independent text layout, eraser geometry, and confirmation helpers |
+| [js/pdf-export.js](js/pdf-export.js) | PDF generation from a snapshot and cleanup of export resources         |
+| **PDF.js**                           | PDF loading and page rendering                                         |
+| **pdf-lib**                          | Adding text, signature images, and vector drawings to exported PDFs    |
+| **Canvas and Pointer Events**        | Signature capture, freehand input, and drawing previews                |
+| **GitHub Actions / Pages**           | Automated checks and static hosting                                    |
+
+The document flow is **local PDF bytes → page preview and editable annotations →
+confirmed snapshot → downloadable PDF**. PDFs are not sent to an application server.
+PDF.js and pdf-lib load from Cloudflare's CDN, so an internet connection is required.
+
+## Run locally
+
+With Git and Python 3 installed:
 
 ```bash
 git clone https://github.com/Ben-Ortiz/Signflow.git
 cd Signflow
-```
-
-**2. Start a local server:**
-
-```bash
 python -m http.server 8000
 ```
 
-**3. Open your browser:**
+Open **http://localhost:8000**. Stop the server with `Ctrl+C`.
 
-http://localhost:8000
+You can also download and extract the repository ZIP, then open `index.html`
+directly in a browser that permits local-file access. Keep the HTML, CSS, and `js/`
+files together. Node.js is needed only for development checks.
 
-Press `Ctrl + C` in the terminal to stop the server.
+## Development and testing
 
-## Technologies
-
-- **HTML / CSS / JavaScript** — Interface and functionality
-- **PDF.js** — PDF rendering
-- **pdf-lib** — PDF editing and exporting
-- **Canvas API** — Signatures and freehand drawing
-
-## Privacy
-
-PDFs are processed locally in your browser and are not uploaded to a server.
-
-**Note:** An internet connection is required to load PDF.js and pdf-lib from Cloudflare's CDN. SignFlow creates visible electronic signatures, not certificate-backed digital signatures.
-
----
-
-Built with ChatGPT Codex.
-
-## Maintaining the app
-
-The site remains a static app with no build step or runtime package installation.
-Keep `index.html`, `styles.css`, and `js/` together when opening a downloaded ZIP.
-
-- `index.html`: accessible interface markup and script loading order.
-- `styles.css`: desktop and mobile layouts.
-- `js/app.js`: editor state, DOM events, navigation, touch gestures, and rendering.
-- `js/core.js`: pure text layout and eraser geometry, independently testable in Node.
-- `js/pdf-export.js`: PDF generation from a snapshot of bytes and annotations.
-
-Annotation positions and dimensions are fractions of the displayed page. Font and
-brush sizes use a canonical width of 612 points. Preview and export share text
-layout; preserve this contract when changing coordinates or sizing.
-
-Uploads validate a candidate PDF before replacing the current document. A revision
-counter prevents older uploads from winning a race. Export owns a separate PDF.js
-document and copies annotations before awaiting work, so later edits or uploads
-cannot change an in-progress download. Destroy PDF.js resources when finished.
-
-### Checks
-
-Use Node.js 22.13 or newer to install development tools and run all checks:
+Use **Node.js 22.13 or newer**:
 
 ```bash
 npm ci
 npm run check
 ```
 
-`npm run check` runs ESLint, checks formatting with Prettier, and runs the core
-regression tests. Use `npm run format` to apply formatting, or `npm test` to run
-the dependency-free core tests alone. The lockfile pins development dependencies;
-commit it when updating tools. These tools are not required to open or use the app.
-Checks run on pull requests and before deployment. Deployment includes only the
-public HTML, CSS, and JavaScript files.
+- `npm run check` runs ESLint, Prettier's formatting check, and the core tests.
+- `npm run format` applies consistent formatting.
+- `npm test` runs the core tests with Node's built-in test runner.
 
-For browser regressions, install Python Playwright (`python -m pip install
-playwright`, then `python -m playwright install chromium`), start the local server,
-and run:
+Development dependencies are pinned in the lockfile. GitHub Actions runs code
+checks on pull requests and before the custom Pages deployment. That deployment
+stages only public app files.
+
+For browser tests, keep the local server running and install Python Playwright:
 
 ```bash
+python -m pip install playwright
+python -m playwright install chromium
 python tests/browser.py
 python tests/drawing.py
 python tests/confirmation.py
@@ -111,9 +138,18 @@ python tests/signature-sequence.py
 python tests/item-sequence.py
 ```
 
-`SIGNFLOW_URL` overrides the local URL; `CHROMIUM_PATH` selects an installed Chromium.
-The tests keep certificate verification enabled. They cover mobile and desktop
-navigation, draft confirmation, failed and overlapping uploads, export isolation,
-reopening PDFs, zoom failures, cleanup failures, partial erasing, brush sizes, and Undo. Test documents contain no
-personal information. Check touch gestures on an actual iPhone before changing
-Safari-specific event handling.
+The browser suite exercises mobile and desktop viewport sizes, page navigation,
+failed and overlapping uploads, export isolation, reopening PDFs, zoom and cleanup
+failures, partial erasing, Undo, and confirmation rules across all tools. Set
+`SIGNFLOW_URL` to test another URL or `CHROMIUM_PATH` to use an installed Chromium.
+Certificate verification remains enabled.
+
+Automated Chromium tests complement device testing. Safari touch behavior should
+also be checked on a physical iPhone when changing gestures or mobile interactions.
+
+## Scope
+
+SignFlow adds visible signatures and annotations; it does not edit the original
+PDF's text or create certificate-backed digital signatures. Documents and edits
+are not persisted between browser sessions. The current focus is a straightforward,
+local editing workflow with a small, understandable static application.
