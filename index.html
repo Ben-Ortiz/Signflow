@@ -434,6 +434,9 @@
       .mobile-upload {
         display: none;
       }
+      .draw-hint {
+        display: none;
+      }
       .item-actions {
         display: none;
         position: absolute;
@@ -473,6 +476,9 @@
         min-height: 44px;
       }
       @media (max-width: 850px) {
+        .draw-hint {
+          display: block;
+        }
         html {
           scroll-padding-top: 100px;
         }
@@ -951,6 +957,10 @@
             ✎ Enable freehand drawing
           </button>
           <div id="paintControls" class="hidden" style="margin-top: 10px">
+            <p class="subtle draw-hint">
+              Choose your settings, then tap Draw again to start. Choose another
+              tool to stop drawing.
+            </p>
             <div class="paint-tools">
               <label class="subtle" for="paintColor">Color</label
               ><input id="paintColor" type="color" value="#182036" /><label
@@ -1194,11 +1204,22 @@
           $("app").classList.add("panel-open");
           $("sheetBackdrop").classList.remove("hidden");
           $("editorTools").setAttribute("role", "dialog");
-          $("editorTools").setAttribute("aria-modal", "true");
+          $("editorTools").setAttribute(
+            "aria-modal",
+            tool === "draw" ? "false" : "true",
+          );
           $("editorTools").setAttribute("aria-labelledby", "sheetTitle");
           $("documentPreview").inert = true;
           document.querySelector(".mobile-header").inert = true;
-          document.querySelector(".mobile-nav").inert = true;
+          document.querySelector(".mobile-nav").inert = tool !== "draw";
+          for (const id of [
+            "mobileSign",
+            "mobileDate",
+            "mobileText",
+            "mobileDraw",
+            "mobileMore",
+          ])
+            $(id).setAttribute("aria-expanded", "false");
           const trigger = {
             sign: "mobileSign",
             date: "mobileDate",
@@ -1215,7 +1236,18 @@
           openTool("text");
         };
         $("mobileMore").onclick = () => openTool("more");
-        $("mobileDraw").onclick = () => openTool("draw");
+        $("mobileDraw").onclick = () => {
+          if (
+            $("app").classList.contains("panel-open") &&
+            $("app").dataset.tool === "draw"
+          ) {
+            closeSheet();
+            setPainting(true);
+            message(
+              "Draw on the PDF. Tap Draw for settings; choose another tool to stop drawing.",
+            );
+          } else openTool("draw");
+        };
         $("closeSheet").onclick = $("sheetBackdrop").onclick = closeSheet;
         document.addEventListener("keydown", (e) => {
           if (!mobile.matches || !$("app").classList.contains("panel-open"))
@@ -1224,7 +1256,7 @@
             e.preventDefault();
             closeSheet();
           }
-          if (e.key === "Tab") {
+          if (e.key === "Tab" && $("app").dataset.tool !== "draw") {
             const controls = [
               ...$("editorTools").querySelectorAll(
                 "button:not(:disabled), input, select",
@@ -1431,7 +1463,11 @@
             document.activeElement.blur();
           if (refresh) render();
         }
-        $("mobileSave").onclick = () => $("download").click();
+        $("mobileSave").onclick = () => {
+          if (painting) setPainting(false);
+          closeSheet();
+          $("download").click();
+        };
         new MutationObserver(() => {
           $("mobileSave").disabled = $("download").disabled;
         }).observe($("download"), {
@@ -2132,7 +2168,7 @@
           if (mobile.matches) $("paintControls").classList.remove("hidden");
           if (painting && mobile.matches) {
             message(
-              "Draw on the PDF. Tap Draw again for eraser, undo, or stop.",
+              "Draw on the PDF. Tap Draw for settings; choose another tool to stop drawing.",
             );
             showView(true);
           }
