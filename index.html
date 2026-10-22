@@ -338,14 +338,17 @@
         left: 0;
         top: 0;
         display: block;
-        cursor: move;
+        cursor: pointer;
         touch-action: none;
         line-height: normal;
-        border: 1.5px dashed #565af2;
-        background: #6366f111;
+        border: 1.5px solid transparent;
+        background: transparent;
         user-select: none;
       }
       .stamp.selected {
+        cursor: move;
+        border: 1.5px dashed #565af2;
+        background: #6366f111;
         outline: 1.5px solid #818cf8;
       }
       .stamp img {
@@ -372,6 +375,7 @@
         display: block;
       }
       .stamp .resize {
+        display: none;
         position: absolute;
         right: -6px;
         bottom: -6px;
@@ -381,6 +385,9 @@
         background: #7375f5;
         border: 2px solid #fff;
         cursor: nwse-resize;
+      }
+      .stamp.selected .resize {
+        display: block;
       }
       .subtle {
         font-size: 12px;
@@ -506,6 +513,13 @@
         }
         .pageWrap.painting {
           touch-action: none;
+        }
+        #confirmPosition {
+          position: fixed;
+          right: max(12px, env(safe-area-inset-right));
+          bottom: max(12px, env(safe-area-inset-bottom));
+          z-index: 10;
+          box-shadow: 0 4px 18px #02061788;
         }
         .stamp .delete {
           width: 36px;
@@ -653,8 +667,8 @@
         </div>
         <div class="tip">
           Add a signature or regular text, then drag it into position. Use the
-          corner handle to resize signatures. Select text to delete it or change
-          its position. Repeat on any page.
+          corner handle to resize signatures. Choose Done placing to hide the
+          controls. Tap a signature or text to adjust it again. Repeat on any page.
         </div>
         <div class="foot">
           Your PDF is processed locally in your browser. No document is sent to
@@ -680,6 +694,7 @@
             <button class="btn" id="zoomIn" aria-label="Zoom in" disabled>+</button>
             <button class="btn" id="zoomFit" disabled>Fit width</button>
           </div>
+          <button class="btn primary hidden" id="confirmPosition">✓ Done placing</button>
         </div>
         <div class="workspace" id="workspace">
           <div class="empty" id="empty">
@@ -1014,6 +1029,8 @@
           if (mobile.matches) showView(true);
         };
         function drawStamps() {
+          $("confirmPosition").classList.toggle("hidden",
+            !placements.some((r) => r.page === pageNum && r.id === selected));
           wrap.querySelectorAll(".stamp").forEach((x) => x.remove());
           for (const rec of placements.filter((r) => r.page === pageNum)) {
             const el = document.createElement("div");
@@ -1025,6 +1042,20 @@
             el.style.top = rec.y * 100 + "%";
             el.style.width = rec.w * 100 + "%";
             el.style.height = rec.h * 100 + "%";
+            el.tabIndex = 0;
+            el.setAttribute("aria-label", rec.kind === "text"
+              ? "Placed text: " + rec.text + ". Press Enter to adjust."
+              : "Placed signature. Press Enter to adjust.");
+            el.addEventListener("keydown", (e) => {
+              if (e.target !== el) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                selected = rec.id;
+                drawStamps();
+              } else if (e.key === "Escape") {
+                confirmPosition();
+              }
+            });
             if (rec.kind === "text") {
               let t = document.createElement("span");
               t.className = "stamp-text";
@@ -1055,6 +1086,7 @@
               e.preventDefault();
               const isResize = e.target.classList.contains("resize");
               selected = rec.id;
+              $("confirmPosition").classList.remove("hidden");
               el.classList.add("selected");
               for (const other of wrap.querySelectorAll(".stamp"))
                 if (other !== el) other.classList.remove("selected");
@@ -1093,6 +1125,12 @@
             wrap.appendChild(el);
           }
         }
+        function confirmPosition() {
+          selected = null;
+          drawStamps();
+          message("Position confirmed. Tap a signature or text to edit it again.");
+        }
+        $("confirmPosition").onclick = confirmPosition;
         const paintCanvas = $("paintCanvas"),
           paintCtx = paintCanvas.getContext("2d");
         function setPainting(on) {
