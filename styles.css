@@ -273,7 +273,7 @@ main {
   font-size: 60px;
   margin-bottom: 17px;
 }
-.empty h3 {
+.empty h1 {
   font-size: 22px;
   color: #e9effd;
   margin: 0 0 12px;
@@ -764,4 +764,42 @@ main {
     right: 12px;
     bottom: calc(80px + env(safe-area-inset-bottom));
   }
+}
+
+.site-guide {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px 100px;
+  color: #a9b8d0;
+  line-height: 1.7;
+}
+.site-guide section + section {
+  margin-top: 32px;
+}
+.site-guide h2 {
+  font-size: 24px;
+  color: #e9effd;
+  line-height: 1.3;
+}
+.site-guide strong {
+  color: #e9effd;
+}
+.site-guide li + li {
+  margin-top: 10px;
+}
+.site-guide details {
+  border-bottom: 1px solid #263551;
+  padding: 16px 0;
+}
+.site-guide summary {
+  color: #e9effd;
+  cursor: pointer;
+  font-weight: 600;
+}
+.site-guide a {
+  color: #b8b9ff;
+}
+.site-guide footer {
+  margin-top: 36px;
+  font-size: 14px;
 }

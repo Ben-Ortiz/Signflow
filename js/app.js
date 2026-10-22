@@ -589,6 +589,7 @@
       setPainting(false);
       $("filename").textContent = file.name;
       $("empty").classList.add("hidden");
+      $("siteGuide")?.classList.add("hidden");
       wrap.classList.remove("hidden");
       $("add").disabled = false;
       $("addText").disabled = false;

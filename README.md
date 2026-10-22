@@ -153,3 +153,10 @@ SignFlow adds visible signatures and annotations; it does not edit the original
 PDF's text or create certificate-backed digital signatures. Documents and edits
 are not persisted between browser sessions. The current focus is a straightforward,
 local editing workflow with a small, understandable static application.
+
+## Search visibility
+
+The public page includes search metadata, a canonical URL, a sitemap, structured
+app information, signing instructions, FAQs, and social previews. See
+[Search visibility](docs/search-visibility.md) for the site owner's Google Search
+Console verification and sitemap submission steps.
