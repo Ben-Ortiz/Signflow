@@ -985,7 +985,8 @@
           paintTool = "pen",
           activeStroke = null,
           signatureMode = "draw",
-          selected = null;
+          selected = null,
+          navigating = false;
         const message = (s) => {
           $("status").textContent = s;
           $("mobileStatus").textContent = s;
@@ -998,7 +999,7 @@
         let sheetOpener = null;
         function updateUndo() {
           $("undoEdit").disabled = $("mobileUndo").disabled =
-            !editHistory.length;
+            navigating || !editHistory.length;
         }
         function recordEdit() {
           editHistory.push(structuredClone({ placements, strokes }));
@@ -1302,9 +1303,10 @@
         }
         async function renderPage() {
           if (!pdf || !$("workspace").clientWidth) return;
-          const current = pageNum;
-          const page = await pdf.getPage(pageNum);
-          if (current !== pageNum) return;
+          const current = pageNum,
+            document = pdf;
+          const page = await document.getPage(current);
+          if (current !== pageNum || document !== pdf) return;
           const natural = page.getViewport({ scale: 1 });
           const workspaceStyle = getComputedStyle($("workspace"));
           let available = Math.max(
@@ -1324,24 +1326,70 @@
           wrap.style.width = viewport.width + "px";
           wrap.style.height = viewport.height + "px";
           await page.render({ canvasContext: pdfCtx, viewport }).promise;
+          if (current !== pageNum || document !== pdf) return;
           $("pageLabel").textContent = `Page ${pageNum} of ${pages}`;
-          $("prev").disabled = pageNum === 1;
-          $("next").disabled = pageNum === pages;
+          $("prev").disabled = navigating || pageNum === 1;
+          $("next").disabled = navigating || pageNum === pages;
           drawStamps();
           redrawPaint();
         }
-        $("prev").onclick = () => {
-          if (pageNum > 1) {
-            pageNum--;
-            render();
+        async function changePage(offset) {
+          const target = pageNum + offset;
+          if (!pdf || navigating || target < 1 || target > pages) return;
+          const previous = pageNum;
+          navigating = true;
+          selected = pendingPlacement = editingTextId = null;
+          activeStroke = null;
+          closeSheet();
+          wrap.inert = true;
+          wrap.setAttribute("aria-busy", "true");
+          wrap
+            .querySelectorAll(".stamp.selected")
+            .forEach((el) => el.classList.remove("selected"));
+          const controls = [
+            "prev",
+            "next",
+            "add",
+            "addText",
+            "mobileSign",
+            "mobileDate",
+            "mobileText",
+            "paintToggle",
+            "pdfFile",
+          ];
+          controls.forEach((id) => ($(id).disabled = true));
+          updateUndo();
+          pageNum = target;
+          $("pageLabel").textContent = `Loading page ${target}…`;
+          try {
+            await render();
+            message(
+              `Page ${target} of ${pages}. Your edits stay on the page where you placed them.`,
+            );
+          } catch (err) {
+            pageNum = previous;
+            try {
+              await render();
+            } catch {
+              /* Keep edits available for export. */
+            }
+            message(
+              "Could not change page: " +
+                err.message +
+                ". Your edits are still kept.",
+            );
+          } finally {
+            navigating = false;
+            wrap.inert = false;
+            wrap.removeAttribute("aria-busy");
+            controls.forEach((id) => ($(id).disabled = !pdf));
+            $("prev").disabled = !pdf || pageNum === 1;
+            $("next").disabled = !pdf || pageNum === pages;
+            updateUndo();
           }
-        };
-        $("next").onclick = () => {
-          if (pageNum < pages) {
-            pageNum++;
-            render();
-          }
-        };
+        }
+        $("prev").onclick = () => changePage(-1);
+        $("next").onclick = () => changePage(1);
         $("add").onclick = () => {
           if (!pdf) return;
           try {
