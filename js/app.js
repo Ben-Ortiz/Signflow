@@ -152,7 +152,9 @@
     $(trigger).setAttribute("aria-expanded", "true");
     $("closeSheet").focus({ preventScroll: true });
   }
-  $("mobileSign").onclick = () => openTool("sign");
+  $("mobileSign").onclick = () => {
+    if (requireConfirmedSignatures()) openTool("sign");
+  };
   $("mobileText").onclick = () => {
     editingTextId = null;
     openTool("text");
@@ -729,8 +731,27 @@
   }
   $("prev").onclick = () => changePage(-1);
   $("next").onclick = () => changePage(1);
+  function requireConfirmedSignatures() {
+    const unfinished = placements.find(
+      (item) => item.kind !== "text" && item.confirmed !== true,
+    );
+    if (!unfinished) return true;
+    selected = unfinished.id;
+    if (painting) setPainting(false);
+    closeSheet();
+    drawStamps();
+    message(
+      "Tap Done on your unfinished signature, or delete it, before adding another signature.",
+    );
+    const stamp = wrap.querySelector(".stamp.selected");
+    stamp?.scrollIntoView({ block: "center", inline: "nearest" });
+    stamp
+      ?.querySelector('button[aria-label="Confirm position"]')
+      ?.focus({ preventScroll: true });
+    return false;
+  }
   $("add").onclick = () => {
-    if (!pdf) return;
+    if (!pdf || !requireConfirmedSignatures()) return;
     try {
       const url = signatureImage();
       const rec = {
