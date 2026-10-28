@@ -831,19 +831,56 @@ main {
 .site-footer nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
+  gap: 6px;
 }
-.site-links a,
 .site-footer a {
   color: #b8b9ff;
   text-underline-offset: 4px;
 }
+.site-links a,
+.site-footer nav a,
+.site-menu a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #c5d1e7;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+.site-links a:hover,
+.site-footer nav a:hover,
+.site-menu a:hover {
+  color: #fff;
+  background: #1d2b46;
+  border-color: #364762;
+}
 .site-links a[aria-current="page"] {
   color: #fff;
-  font-weight: 700;
+  background: #6366f126;
+  border-color: #7779ff66;
 }
-.site-links a {
-  padding: 8px 0;
+.site-nav a:focus-visible,
+.site-menu a:focus-visible,
+.site-menu summary:focus-visible,
+.site-footer nav a:focus-visible {
+  outline: 2px solid #a5a7ff;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-links a,
+  .site-footer nav a,
+  .site-menu a {
+    transition: none;
+  }
 }
 .site-menu {
   position: relative;
@@ -941,8 +978,10 @@ main {
   .site-nav {
     padding: 14px 16px;
   }
-  .site-links {
-    gap: 8px 16px;
+  .site-links a,
+  .site-footer nav a,
+  .site-menu a {
+    min-height: 44px;
   }
   .info-page main {
     padding: 24px 20px 48px;
