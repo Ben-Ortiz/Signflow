@@ -45,6 +45,9 @@ refreshing the app; documents and edits are held in memory.
 
 ## How it was made
 
+The entire project was created and iterated on from an **iPhone**, using
+**ChatGPT Codex** to develop, test, and deploy the app in a cloud workspace.
+
 SignFlow was developed through an iterative, AI-assisted workflow using **ChatGPT
 Codex**. The project started with a personal need for a simple PDF signing tool,
 then evolved through hands-on testing, feedback, bug fixes, and refactoring.

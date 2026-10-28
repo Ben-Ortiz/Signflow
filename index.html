@@ -52,7 +52,7 @@
       name="twitter:image:alt"
       content="SignFlow — free PDF signing in your browser, with no signup."
     />
-    <link rel="stylesheet" href="styles.css?v=554274f6c8c9" />
+    <link rel="stylesheet" href="styles.css?v=d9b46d89fb0a" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -423,32 +423,19 @@
             </div>
           </div>
         </div>
-        <div>
-          <h2>Save your PDF</h2>
-          <div class="actions">
-            <button class="btn wide" id="download" disabled>
-              ↓ Download signed PDF
-            </button>
-          </div>
-          <div
-            id="status"
-            class="status"
-            role="status"
-            style="margin-top: 12px"
-          ></div>
-        </div>
-        <div class="tip">
-          Add a signature or regular text, then drag it into position. Use the
-          corner handle to resize signatures. Items follow page changes until
-          you choose Done to keep them on the current page and hide the
-          controls. Tap a signature or text to adjust it again. Repeat on any
-          page.
-        </div>
+        <details class="editor-help">
+          <summary>Placement tips</summary>
+          <p>
+            Move or resize an item, then press Done to keep it on that page. Tap
+            it again to edit. Finish or delete an unfinished item before adding
+            another.
+          </p>
+        </details>
         <div class="foot">
-          Your PDF is processed locally in your browser. No document is sent to
-          a server. This adds a visible signature; it does not provide
-          certificate-based cryptographic signing. Libraries load from a public
-          CDN.
+          Your PDF stays on your device.
+          <a href="privacy.html" target="_blank" rel="noopener"
+            >Privacy details →</a
+          >
         </div>
       </aside>
       <main id="documentPreview">
@@ -472,8 +459,16 @@
             </button>
             <button class="btn" id="zoomFit" disabled>Fit width</button>
           </div>
-          <button class="btn undo-button" id="undoEdit" disabled>↶ Undo</button>
+          <div class="preview-actions">
+            <button class="btn undo-button" id="undoEdit" disabled>
+              ↶ Undo
+            </button>
+            <button class="btn primary desktop-save" id="download" disabled>
+              ↓ Save PDF
+            </button>
+          </div>
         </div>
+        <div id="status" class="status desktop-status" role="status"></div>
         <div
           id="drawingActions"
           class="drawing-actions hidden"
@@ -486,14 +481,27 @@
         </div>
         <div class="workspace" id="workspace">
           <div class="empty" id="empty">
-            <div class="icon" aria-hidden="true">▤</div>
-            <p class="hero-eyebrow">
-              No account · No subscription · Local PDF processing
-            </p>
+            <div class="icon" aria-hidden="true">
+              <svg
+                width="36"
+                height="44"
+                viewBox="0 0 36 44"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M21 2H5a2 2 0 0 0-2 2v36a2 2 0 0 0 2 2h26a2 2 0 0 0 2-2V14L21 2Z"
+                />
+                <path d="M21 2v12h12M10 22h16M10 28h9m-9 7 4-3 2 3 4-4 2 4h4" />
+              </svg>
+            </div>
+            <p class="hero-eyebrow">Free · No account needed</p>
             <h1>Sign PDFs online for free</h1>
             <p>
-              Draw or type your signature, add text and dates, then download
-              your PDF. No signup. Your document stays in your browser.
+              Add your signature, text, or dates. Your PDF stays on your device.
             </p>
             <label class="upload hero-upload" for="pdfFile">↑ Open a PDF</label>
             <p class="hero-help">
@@ -521,93 +529,93 @@
       id="siteGuide"
       aria-label="About SignFlow and how to sign PDFs"
     >
-      <section aria-labelledby="sign-pdf-heading">
-        <h2 id="sign-pdf-heading">
-          A simple way to sign a PDF without an account
-        </h2>
-        <p>
-          SignFlow is a free online PDF signer for documents you need to sign
-          and send back. Add a handwritten or typed signature, fill in text and
-          dates, or draw directly on a page. Work in your browser on a phone,
-          tablet, or computer, then download a copy.
-        </p>
-        <p>
-          You do not need to create an account or install an app. PDF processing
-          happens on your device; your document is not uploaded to an
-          application server.
-        </p>
-      </section>
-      <section aria-labelledby="how-to-sign">
-        <h2 id="how-to-sign">How to sign a PDF online</h2>
-        <ol>
+      <section class="quick-guide" aria-labelledby="how-to-sign">
+        <div class="guide-heading">
+          <div>
+            <p class="section-eyebrow">Getting started</p>
+            <h2 id="how-to-sign">How to sign a PDF online</h2>
+          </div>
+          <a
+            class="guide-link"
+            href="how-to-sign.html"
+            target="_blank"
+            rel="noopener"
+            >Read the full guide →</a
+          >
+        </div>
+        <ol class="quick-start" role="list">
           <li>
-            <strong>Open your PDF.</strong> Choose Upload PDF or Open a PDF and
-            select a file from your device.
+            <span class="step-number" aria-hidden="true">01</span>
+            <h3>Open your PDF</h3>
+            <p>Choose a document from your device.</p>
           </li>
           <li>
-            <strong>Add your signature.</strong> Choose Sign, draw your
-            signature or type your name, then place it on the page.
+            <span class="step-number" aria-hidden="true">02</span>
+            <h3>Add your signature</h3>
+            <p>Draw or type it, position it, then press Done.</p>
           </li>
           <li>
-            <strong>Confirm the position.</strong> Move or resize the signature
-            and press Done. Finish or delete each item before starting another.
-          </li>
-          <li>
-            <strong>Save your signed PDF.</strong> Choose Save or Download
-            signed PDF to download a copy with your confirmed work.
+            <span class="step-number" aria-hidden="true">03</span>
+            <h3>Save your copy</h3>
+            <p>Download the PDF with your confirmed edits.</p>
           </li>
         </ol>
-        <p>
-          You can also add text, choose a date format, and use the pen and
-          eraser. Unfinished new items are left out of the download. When you
-          edit an existing item, its last confirmed version is kept until you
-          press Done again.
-        </p>
       </section>
-      <section aria-labelledby="pdf-questions">
-        <h2 id="pdf-questions">Questions about signing PDFs</h2>
-        <details>
-          <summary>Is SignFlow free to use without signing up?</summary>
-          <p>
-            Yes. You can open, sign, annotate, and download PDFs without an
-            account or subscription.
-          </p>
-        </details>
-        <details>
-          <summary>Can I sign a PDF on my phone?</summary>
-          <p>
-            Open SignFlow in your phone's browser and choose a PDF from your
-            files. The mobile layout puts Sign, Date, Text, Draw, and Save along
-            the bottom. Use two fingers to zoom the document, and press Done
-            after placing an item.
-          </p>
-        </details>
-        <details>
-          <summary>Can I add text or a date to a PDF?</summary>
-          <p>
-            Yes. Choose Text to add a new text item, or Date to choose a date
-            and format. Position the item and press Done before saving. These
-            tools add annotations; they do not change the PDF's existing text.
-          </p>
-        </details>
-        <details id="privacy">
-          <summary>Where do my PDF and signature go?</summary>
-          <p>
-            Your PDF and edits are processed in browser memory and are not
-            uploaded to an application server. The app loads PDF libraries from
-            Cloudflare's CDN, so an internet connection is needed. Save before
-            closing or refreshing the page; unsaved work is not stored between
-            sessions.
-          </p>
-        </details>
-        <details>
-          <summary>Is this a certificate-backed digital signature?</summary>
-          <p>
-            No. SignFlow adds a visible electronic signature to your PDF. It
-            does not create a certificate-backed digital signature. Check the
-            recipient's signing requirements for your document.
-          </p>
-        </details>
+      <section class="guide-faq" aria-labelledby="pdf-questions">
+        <div class="guide-heading">
+          <h2 id="pdf-questions">Questions about signing PDFs</h2>
+          <a
+            class="guide-link"
+            href="contact.html"
+            target="_blank"
+            rel="noopener"
+            >Need a hand?</a
+          >
+        </div>
+        <div class="faq-grid">
+          <details>
+            <summary>Is SignFlow free to use without signing up?</summary>
+            <p>
+              Yes. You can open, sign, annotate, and download PDFs without an
+              account or subscription.
+            </p>
+          </details>
+          <details>
+            <summary>Can I sign a PDF on my phone?</summary>
+            <p>
+              Open SignFlow in your phone's browser and choose a PDF from your
+              files. The mobile layout puts Sign, Date, Text, Draw, and Save
+              along the bottom. Use two fingers to zoom the document, and press
+              Done after placing an item.
+            </p>
+          </details>
+          <details>
+            <summary>Can I add text or a date to a PDF?</summary>
+            <p>
+              Yes. Choose Text to add a new text item, or Date to choose a date
+              and format. Position the item and press Done before saving. These
+              tools add annotations; they do not change the PDF's existing text.
+            </p>
+          </details>
+          <details id="privacy">
+            <summary>Where do my PDF and signature go?</summary>
+            <p>
+              Your PDF and edits are processed in browser memory and are not
+              uploaded to an application server. The app loads PDF libraries
+              from Cloudflare's CDN, so an internet connection is needed. Save
+              before closing or refreshing the page; unsaved work is not stored
+              between sessions.
+            </p>
+          </details>
+          <details>
+            <summary>Is this a certificate-backed digital signature?</summary>
+            <p>
+              No. SignFlow adds a visible electronic signature to your PDF. It
+              does not create a certificate-backed digital signature. Check the
+              recipient's signing requirements for your document.
+            </p>
+          </details>
+        </div>
       </section>
       <footer class="site-footer">
         <p>SignFlow · Free PDF signing in your browser</p>

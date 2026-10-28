@@ -270,8 +270,15 @@ main {
   max-width: 380px;
 }
 .empty .icon {
-  font-size: 60px;
-  margin-bottom: 17px;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 88px;
+  margin: 0 auto 24px;
+  color: #b8b9ff;
+  border: 1px solid #6366f144;
+  border-radius: 20px;
+  background: #6366f114;
 }
 .empty h1 {
   font-size: 22px;
@@ -767,9 +774,9 @@ main {
 }
 
 .site-guide {
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 40px 24px 100px;
+  padding: 36px 24px 48px;
   color: #a9b8d0;
   line-height: 1.7;
 }
@@ -942,5 +949,195 @@ main {
   }
   .site-footer {
     padding: 24px 20px;
+  }
+}
+
+/* Compact guidance keeps the signing workspace in focus. */
+.guide-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.guide-heading h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.section-eyebrow {
+  margin: 0 0 6px;
+  color: #98abc9;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.guide-link {
+  font-size: 13px;
+  text-underline-offset: 4px;
+}
+.quick-start {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.site-guide .quick-start li {
+  margin: 0;
+  padding: 22px;
+  border: 1px solid #263551;
+  border-radius: 14px;
+  background: #111a2d;
+}
+.step-number {
+  display: inline-block;
+  color: #a5a7ff;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+.quick-start h3 {
+  margin: 12px 0 6px;
+  font-size: 16px;
+  color: #e9effd;
+}
+.quick-start p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 32px;
+  align-items: start;
+}
+.site-guide .faq-grid details {
+  padding: 14px 0;
+}
+.site-guide .faq-grid summary {
+  font-size: 14px;
+}
+.site-guide .faq-grid p {
+  font-size: 14px;
+}
+.editor-help {
+  border: 1px solid #263551;
+  border-radius: 10px;
+  padding: 12px;
+  color: #a9b8d0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.editor-help summary {
+  cursor: pointer;
+  color: #c5d1e7;
+}
+.editor-help p {
+  margin: 10px 0 0;
+}
+.foot a {
+  color: #b8b9ff;
+}
+
+@media (min-width: 851px) {
+  .editor-site-nav {
+    height: 72px;
+    flex-wrap: nowrap;
+  }
+  #app {
+    height: calc(100dvh - 72px);
+    min-height: 620px;
+  }
+  #editorTools {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #364762 transparent;
+    gap: 20px;
+    padding: 24px;
+  }
+  #documentPreview {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 24px;
+    overflow: hidden;
+  }
+  #documentPreview .toolbar {
+    flex-shrink: 0;
+  }
+  #workspace {
+    flex: 1;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #364762 transparent;
+  }
+  #empty {
+    max-width: 580px;
+    padding: 24px;
+  }
+  #empty h1 {
+    font-size: clamp(28px, 2.5vw, 38px);
+    letter-spacing: -1.1px;
+    line-height: 1.15;
+  }
+  #empty > p:not(.hero-eyebrow):not(.hero-help) {
+    max-width: 360px;
+    margin: 16px auto 0;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  #empty .hero-upload {
+    max-width: 280px;
+    margin: 28px auto 0;
+    border-style: solid;
+    border-color: #7779ff;
+    background: #6366f1;
+    color: #fff;
+  }
+  #empty .hero-upload:hover {
+    background: #5458e3;
+  }
+  #empty .hero-help {
+    margin: 16px 0 0;
+  }
+  #editorTools > [data-panel] {
+    border-bottom: 1px solid #263551;
+    padding-bottom: 20px;
+  }
+}
+@media (max-width: 600px) {
+  .quick-start,
+  .faq-grid {
+    grid-template-columns: 1fr;
+  }
+  .site-guide .quick-start li {
+    padding: 18px;
+  }
+  .guide-heading h2 {
+    font-size: 20px;
+  }
+}
+
+.preview-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.desktop-status {
+  flex-shrink: 0;
+  margin: 0 0 12px;
+}
+.desktop-status:empty {
+  display: none;
+}
+@media (max-width: 850px) {
+  .preview-actions,
+  .desktop-status {
+    display: none;
   }
 }
