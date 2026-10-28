@@ -603,6 +603,7 @@
       $("download").disabled = exporting;
       if (mobile.matches) showView(true, false);
       await render();
+      document.body.classList.add("document-ready");
       if (mobile.matches) window.scrollTo(0, 0);
       message(
         mobile.matches

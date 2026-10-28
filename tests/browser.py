@@ -37,6 +37,22 @@ with sync_playwright() as playwright:
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(URL, wait_until="networkidle")
+        if width < 850:
+            assert page.locator(".mobile-nav").is_hidden()
+            assert page.locator("#mobileUndo").is_hidden()
+            assert page.locator("#documentPreview > .toolbar").is_hidden()
+            page.locator("#pdfFile").set_input_files(
+                {
+                    "name": "invalid-first.pdf",
+                    "mimeType": "application/pdf",
+                    "buffer": b"invalid pdf",
+                }
+            )
+            page.wait_for_function(
+                "document.querySelector('#status').textContent.startsWith('Could not open PDF:')"
+            )
+            assert page.locator(".mobile-nav").is_hidden()
+
         source = bytes(page.evaluate("""async () => {
             const d = await PDFLib.PDFDocument.create();
             d.addPage([612, 792]); d.addPage([612, 792]);
@@ -44,6 +60,9 @@ with sync_playwright() as playwright:
         }"""))
         upload(page, "original.pdf", source)
         if width < 850:
+            assert page.locator(".mobile-nav").is_visible()
+            assert page.locator("#mobileUndo").is_visible()
+            assert page.locator("#documentPreview > .toolbar").is_visible()
             page.locator("#mobileDate").click()
         page.locator("#today").click()
         page.locator("#addDate").click()
@@ -81,6 +100,8 @@ with sync_playwright() as playwright:
         assert page.locator("#filename").text_content() == "original.pdf"
         assert page.locator(".stamp").count() == 1
         assert page.locator("#download").is_enabled()
+        if width < 850:
+            assert page.locator(".mobile-nav").is_visible()
 
         # Deliberately pause export; replacing the editor must not affect its snapshot.
         page.evaluate("""() => {

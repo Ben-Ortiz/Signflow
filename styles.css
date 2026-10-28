@@ -566,7 +566,7 @@ main {
     white-space: nowrap;
     margin-top: 4px;
   }
-  .mobile-nav {
+  .document-ready .mobile-nav {
     display: flex;
     position: fixed;
     bottom: 0;
@@ -578,6 +578,19 @@ main {
       max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     background: #f8fafc;
     border-top: 1px solid #dce2ee;
+  }
+  body:not(.document-ready) #mobileUndo,
+  body:not(.document-ready) #documentPreview > .toolbar {
+    display: none;
+  }
+  body:not(.document-ready) #app {
+    min-height: 0;
+  }
+  body:not(.document-ready) #documentPreview {
+    padding-bottom: 24px;
+  }
+  body:not(.document-ready) #workspace {
+    min-height: calc(100dvh - 140px);
   }
   .mobile-nav button {
     flex: 1;
