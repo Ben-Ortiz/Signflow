@@ -2,6 +2,10 @@
 
 **A free, browser-based PDF signer and annotation editor built for phones and desktops.**
 
+> **Built entirely from an iPhone.** I created and iterated on this project from my
+> phone, using **ChatGPT Codex** and a cloud workspace for development, testing,
+> and deployment.
+
 I built SignFlow because signing a PDF should be straightforward: open a document,
 add what you need, and download the result. No account, subscription, or installation
 required. PDF processing happens locally in the browser.
@@ -43,14 +47,16 @@ For signatures, text, and dates, unconfirmed items follow page changes until you
 press Done to keep them on a specific page. Save your work before closing or
 refreshing the app; documents and edits are held in memory.
 
-## How it was made
+## How I built it from an iPhone
 
-The entire project was created and iterated on from an **iPhone**, using
-**ChatGPT Codex** to develop, test, and deploy the app in a cloud workspace.
+My **iPhone was my development interface throughout the project**. I used it to
+define features, test the mobile experience, request and review changes, and
+iterate on bugs and design improvements. **ChatGPT Codex** handled code edits,
+commands, and automated checks in a cloud workspace, with updates deployed to
+GitHub Pages.
 
-SignFlow was developed through an iterative, AI-assisted workflow using **ChatGPT
-Codex**. The project started with a personal need for a simple PDF signing tool,
-then evolved through hands-on testing, feedback, bug fixes, and refactoring.
+The project started with a personal need for a simple PDF signing tool, then
+evolved through hands-on testing, feedback, bug fixes, and refactoring.
 
 Product decisions focused on reducing friction: keeping the document visible on a
 phone, making placement controls disappear after confirmation, distinguishing
